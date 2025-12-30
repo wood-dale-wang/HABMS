@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/** 主数据库逻辑对象 */
 public class HABMSDB {
     private final String url;
     private final String user;
@@ -289,6 +290,7 @@ public class HABMSDB {
         }
     }
 
+    /** 修改排班容量数据，输入的是增量 */
     public void ChangeScheduleCapacity(int sid, int delta) throws SQLException {
         String sql = "UPDATE Schedule SET Capacity=Capacity+?, Res=Res+? WHERE SID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -299,6 +301,7 @@ public class HABMSDB {
         }
     }
 
+    /** 尝试预定操作，成功返回预定数据对象，失败返回null */
     public Appointment TryAppointment(String aid, int sid) throws SQLException {
         String updateSql = "UPDATE Schedule SET Res=Res-1 WHERE SID=? AND Res>0";
         String selectSchedule = "SELECT DID, STime, ETime FROM Schedule WHERE SID=?";
@@ -306,11 +309,12 @@ public class HABMSDB {
 
         try (Connection conn = getConnection()) {
             boolean oldAutoCommit = conn.getAutoCommit();
-            conn.setAutoCommit(false);
+            conn.setAutoCommit(false);  // 切换为手动事务控制模式
+                                        // 此时必须显示调用Connection.commit()才会影响数据库
             try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setInt(1, sid);
                 int updated = ps.executeUpdate();
-                if (updated != 1) {
+                if (updated != 1) { // 失败返回
                     conn.rollback();
                     conn.setAutoCommit(oldAutoCommit);
                     return null;

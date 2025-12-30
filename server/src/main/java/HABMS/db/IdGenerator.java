@@ -3,6 +3,7 @@ package HABMS.db;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 
+/** ID生成静态方法集合 */
 final class IdGenerator {
     private static final SecureRandom RANDOM = new SecureRandom();
 
