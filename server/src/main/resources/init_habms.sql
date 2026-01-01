@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS Schedule (
     STime DATETIME NOT NULL,
     ETime DATETIME NOT NULL,
     Capacity INT NOT NULL,
-    Res INT NOT NULL
+    Res INT NOT NULL,
+    UNIQUE KEY uk_schedule_doctor_time (DID, STime, ETime)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS Appointment (
