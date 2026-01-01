@@ -584,14 +584,14 @@ final class Service implements Runnable {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static final class Request {
-        String type;
-        JsonNode data;
+        public String type;
+        public JsonNode data;
     }
 
     private static final class Response {
         @JsonProperty("Statu")
-        final String statu;
-        final Object data;
+        public final String statu;
+        public final Object data;
 
         Response(String statu, Object data) {
             this.statu = statu;

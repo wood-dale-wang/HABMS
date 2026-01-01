@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.LoginController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+   <children>
+      <Text strokeType="OUTSIDE" strokeWidth="0.0" text="飞马星球医院预约挂号系统">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Text>
+      <TabPane tabClosingPolicy="UNAVAILABLE">
+        <tabs>
+          <Tab text="登录">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="300.0" prefWidth="400.0">
+                     <children>
+                        <VBox alignment="CENTER" layoutX="50.0" layoutY="25.0" prefHeight="250.0" prefWidth="300.0" spacing="15.0">
+                           <children>
+                              <TextField fx:id="pidField" promptText="身份证号 / 手机号" />
+                              <PasswordField fx:id="passwordField" promptText="密码" />
+                              <Button mnemonicParsing="false" onAction="#handleLogin" prefHeight="30.0" prefWidth="300.0" text="登录" />
+                              <Label fx:id="errorLabel" textFill="RED" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
+            </content>
+          </Tab>
+          <Tab text="注册">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="350.0" prefWidth="400.0">
+                     <children>
+                        <VBox alignment="CENTER" layoutX="50.0" layoutY="10.0" prefHeight="330.0" prefWidth="300.0" spacing="10.0">
+                           <children>
+                              <TextField fx:id="regNameField" promptText="姓名" />
+                              <TextField fx:id="regPidField" promptText="身份证号 (18位)" />
+                              <TextField fx:id="regPhoneField" promptText="手机号" />
+                              <PasswordField fx:id="regPasswordField" promptText="密码" />
+                              <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                 <children>
+                                    <Label text="性别:" />
+                                    <ComboBox fx:id="regSexCombo" prefWidth="100.0" />
+                                 </children>
+                              </HBox>
+                              <Button mnemonicParsing="false" onAction="#handleRegister" prefWidth="300.0" text="注册" />
+                              <Label fx:id="regErrorLabel" textFill="RED" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
+            </content>
+          </Tab>
+        </tabs>
+      </TabPane>
+   </children>
+</VBox>
