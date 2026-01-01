@@ -8,6 +8,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 
 public class NetworkClient {
@@ -29,7 +31,9 @@ public class NetworkClient {
 
     public void connect() throws IOException {
         if (socket == null || socket.isClosed()) {
-            socket = new Socket(SERVER_HOST, SERVER_PORT);
+            Socket s = new Socket(Proxy.NO_PROXY);
+            s.connect(new InetSocketAddress(SERVER_HOST, SERVER_PORT));
+            socket = s;
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         }

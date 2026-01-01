@@ -17,6 +17,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -110,8 +111,13 @@ public class LoginController {
                     resp.getData(),
                     JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, String.class));
 
+            List<String> merged = new ArrayList<>(departments);
+            if (!merged.contains("管理")) {
+                merged.add("管理");
+            }
+
             Platform.runLater(() -> {
-                doctorDeptCombo.getItems().setAll(departments);
+                doctorDeptCombo.getItems().setAll(merged);
                 if (current != null && !current.isBlank()) {
                     if (doctorDeptCombo.getItems().contains(current)) {
                         doctorDeptCombo.getSelectionModel().select(current);
