@@ -54,6 +54,19 @@ public class HABMSDB {
         }
     }
 
+    public void UpdateDoctorAccount(DoctorAccount doctor) throws SQLException {
+        String sql = "UPDATE Doctor SET Name=?, Password=?, Admin=?, Department=?, Description=? WHERE DID=?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, doctor.getName());
+            ps.setString(2, doctor.getPasswordHex());
+            ps.setBoolean(3, doctor.isAdmin());
+            ps.setString(4, doctor.getDepartment());
+            ps.setString(5, doctor.getDescription());
+            ps.setString(6, doctor.getDid());
+            ps.executeUpdate();
+        }
+    }
+
     public void InsertAppointment(Appointment appointment) throws SQLException {
         String sql = "INSERT INTO Appointment(APID,AID,DID,SID,Statu) VALUES (?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {

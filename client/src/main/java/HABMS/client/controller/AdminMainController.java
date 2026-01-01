@@ -17,6 +17,14 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.TextField;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.CheckBox;
+import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 
 import java.io.BufferedReader;
@@ -167,6 +175,230 @@ public class AdminMainController {
     }
 
     @FXML
+    private void handleManualAddDoctor(ActionEvent event) {
+        showDoctorInputDialog(null);
+    }
+
+    @FXML
+    private void handleEditDoctor(ActionEvent event) {
+        Doctor selectedDoctor = doctorTable.getSelectionModel().getSelectedItem();
+        if (selectedDoctor == null) {
+            showError("未选择医生", "请先在列表中选择要修改的医生");
+            return;
+        }
+        showDoctorInputDialog(selectedDoctor);
+    }
+
+    private void showDoctorInputDialog(Doctor existing) {
+        boolean isEdit = (existing != null);
+        Dialog<Map<String, Object>> dialog = new Dialog<>();
+        dialog.setTitle(isEdit ? "修改医生信息" : "手动添加医生");
+        dialog.setHeaderText(isEdit ? "修改医生: " + existing.getName() : "请输入医生信息");
+
+        ButtonType okButtonType = new ButtonType(isEdit ? "保存" : "添加", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new javafx.geometry.Insets(20, 150, 10, 10));
+
+        TextField did = new TextField(isEdit ? existing.getDid() : "");
+        did.setPromptText("医生ID (可选)");
+        if (isEdit) {
+            did.setEditable(false);
+            did.setDisable(true);
+        }
+
+        TextField name = new TextField(isEdit ? existing.getName() : "");
+        name.setPromptText("姓名");
+        
+        PasswordField password = new PasswordField();
+        password.setPromptText(isEdit ? "留空则不修改密码" : "密码");
+        
+        TextField department = new TextField(isEdit ? existing.getDepartment() : "");
+        department.setPromptText("科室");
+        
+        TextArea description = new TextArea(isEdit ? existing.getDescription() : "");
+        description.setPromptText("描述");
+        description.setPrefRowCount(3);
+        
+        CheckBox isAdmin = new CheckBox("管理员");
+        if (isEdit) isAdmin.setSelected(existing.isAdmin());
+
+        grid.add(new Label("ID:"), 0, 0);
+        grid.add(did, 1, 0);
+        grid.add(new Label("姓名:"), 0, 1);
+        grid.add(name, 1, 1);
+        grid.add(new Label("密码:"), 0, 2);
+        grid.add(password, 1, 2);
+        grid.add(new Label("科室:"), 0, 3);
+        grid.add(department, 1, 3);
+        grid.add(new Label("描述:"), 0, 4);
+        grid.add(description, 1, 4);
+        grid.add(isAdmin, 1, 5);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                Map<String, Object> doctor = new HashMap<>();
+                doctor.put("did", did.getText().trim());
+                doctor.put("name", name.getText().trim());
+                String pwd = password.getText().trim();
+                if (!pwd.isEmpty()) {
+                    doctor.put("passwordHex", sha256(pwd));
+                } else {
+                    doctor.put("passwordHex", "");
+                }
+                doctor.put("department", department.getText().trim());
+                doctor.put("admin", isAdmin.isSelected());
+                doctor.put("describe", description.getText().trim());
+                return doctor;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(doctor -> {
+            if (((String) doctor.get("name")).isEmpty() || ((String) doctor.get("department")).isEmpty()) {
+                showError("输入错误", "姓名和科室不能为空");
+                return;
+            }
+            
+            Task<Response> task = new Task<>() {
+                @Override
+                protected Response call() throws Exception {
+                    List<Map<String, Object>> doctors = new ArrayList<>();
+                    doctors.add(doctor);
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("doctors", doctors);
+                    return NetworkClient.getInstance().sendRequest(new Request("admin_add_doctors", data));
+                }
+            };
+
+            task.setOnSucceeded(e -> {
+                Response resp = task.getValue();
+                if (resp.isOk()) {
+                    doctorImportResult.setStyle("-fx-text-fill: #1b8a3f;");
+                    doctorImportResult.setText(isEdit ? "修改成功" : "添加成功");
+                    if (isEdit) handleRefreshDoctors(null);
+                } else {
+                    doctorImportResult.setStyle("-fx-text-fill: #c0392b;");
+                    doctorImportResult.setText((isEdit ? "修改失败: " : "添加失败: ") + resp.getErrInfo());
+                    showError(isEdit ? "修改医生失败" : "添加医生失败", resp.getErrInfo());
+                }
+            });
+            
+            task.setOnFailed(e -> {
+                doctorImportResult.setStyle("-fx-text-fill: #c0392b;");
+                doctorImportResult.setText("操作失败: " + e.getSource().getException().getMessage());
+                showError("操作失败", e.getSource().getException().getMessage());
+            });
+            
+            new Thread(task).start();
+        });
+    }
+
+    @FXML
+    private void handleManualAddSchedule(ActionEvent event) {
+        Dialog<Map<String, Object>> dialog = new Dialog<>();
+        dialog.setTitle("手动添加排班");
+        dialog.setHeaderText("请输入排班信息");
+
+        ButtonType loginButtonType = new ButtonType("添加", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new javafx.geometry.Insets(20, 150, 10, 10));
+
+        TextField did = new TextField();
+        did.setPromptText("医生ID");
+        TextField name = new TextField();
+        name.setPromptText("医生姓名");
+        TextField department = new TextField();
+        department.setPromptText("科室");
+        TextField startTime = new TextField();
+        startTime.setPromptText("2026-01-01T09:00:00");
+        TextField endTime = new TextField();
+        endTime.setPromptText("2026-01-01T12:00:00");
+        TextField capacity = new TextField();
+        capacity.setPromptText("20");
+
+        grid.add(new Label("医生ID:"), 0, 0);
+        grid.add(did, 1, 0);
+        grid.add(new Label("医生姓名:"), 0, 1);
+        grid.add(name, 1, 1);
+        grid.add(new Label("科室:"), 0, 2);
+        grid.add(department, 1, 2);
+        grid.add(new Label("开始时间:"), 0, 3);
+        grid.add(startTime, 1, 3);
+        grid.add(new Label("结束时间:"), 0, 4);
+        grid.add(endTime, 1, 4);
+        grid.add(new Label("容量:"), 0, 5);
+        grid.add(capacity, 1, 5);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == loginButtonType) {
+                Map<String, Object> schedule = new HashMap<>();
+                schedule.put("did", did.getText().trim());
+                schedule.put("name", name.getText().trim());
+                schedule.put("department", department.getText().trim());
+                schedule.put("startTime", startTime.getText().trim());
+                schedule.put("endTime", endTime.getText().trim());
+                try {
+                    schedule.put("capacity", Integer.parseInt(capacity.getText().trim()));
+                } catch (NumberFormatException e) {
+                    return null; // Validation fail
+                }
+                return schedule;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(schedule -> {
+            if (schedule.get("capacity") == null) {
+                showError("输入错误", "容量必须为数字");
+                return;
+            }
+            
+            Task<Response> task = new Task<>() {
+                @Override
+                protected Response call() throws Exception {
+                    List<Map<String, Object>> schedules = new ArrayList<>();
+                    schedules.add(schedule);
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("schedules", schedules);
+                    return NetworkClient.getInstance().sendRequest(new Request("admin_add_schedules", data));
+                }
+            };
+
+            task.setOnSucceeded(e -> {
+                Response resp = task.getValue();
+                if (resp.isOk()) {
+                    scheduleImportResult.setStyle("-fx-text-fill: #1b8a3f;");
+                    scheduleImportResult.setText("添加成功");
+                } else {
+                    scheduleImportResult.setStyle("-fx-text-fill: #c0392b;");
+                    scheduleImportResult.setText("添加失败: " + resp.getErrInfo());
+                    showError("添加排班失败", resp.getErrInfo());
+                }
+            });
+            
+            task.setOnFailed(e -> {
+                scheduleImportResult.setStyle("-fx-text-fill: #c0392b;");
+                scheduleImportResult.setText("添加失败: " + e.getSource().getException().getMessage());
+                showError("添加排班失败", e.getSource().getException().getMessage());
+            });
+            
+            new Thread(task).start();
+        });
+    }
+
+    @FXML
     private void handleImportSchedules(ActionEvent event) {
         File file = csvChooser.showOpenDialog(((Node) event.getSource()).getScene().getWindow());
         if (file == null) {
@@ -266,16 +498,18 @@ public class AdminMainController {
 
     private Map<String, Object> parseDoctorLine(String line, int lineNo) throws IOException {
         String[] parts = line.split(",");
-        if (parts.length < 3) {
+        if (parts.length < 4) {
             throw new IOException("医生账户第 " + lineNo + " 行字段不足");
         }
-        String name = parts[0].trim();
-        String passwordPlain = parts[1].trim();
-        String department = parts[2].trim();
-        boolean admin = parts.length > 3 && Boolean.parseBoolean(parts[3].trim());
-        String describe = parts.length > 4 ? parts[4].trim() : "";
+        String did = parts[0].trim();
+        String name = parts[1].trim();
+        String passwordPlain = parts[2].trim();
+        String department = parts[3].trim();
+        boolean admin = parts.length > 4 && Boolean.parseBoolean(parts[4].trim());
+        String describe = parts.length > 5 ? parts[5].trim() : "";
 
         Map<String, Object> doctor = new HashMap<>();
+        doctor.put("did", did);
         doctor.put("name", name);
         doctor.put("passwordHex", sha256(passwordPlain));
         doctor.put("department", department);
@@ -290,16 +524,17 @@ public class AdminMainController {
 
     private Map<String, Object> parseScheduleLine(String line, int lineNo) throws IOException {
         String[] parts = line.split(",");
-        if (parts.length < 5) {
-            throw new IOException("排班第 " + lineNo + " 行字段不足（需 name, department, startTime, endTime, capacity）");
+        if (parts.length < 6) {
+            throw new IOException("排班第 " + lineNo + " 行字段不足（需 did, name, department, startTime, endTime, capacity）");
         }
         Map<String, Object> schedule = new HashMap<>();
-        schedule.put("name", parts[0].trim());
-        schedule.put("department", parts[1].trim());
-        schedule.put("startTime", parts[2].trim());
-        schedule.put("endTime", parts[3].trim());
+        schedule.put("did", parts[0].trim());
+        schedule.put("name", parts[1].trim());
+        schedule.put("department", parts[2].trim());
+        schedule.put("startTime", parts[3].trim());
+        schedule.put("endTime", parts[4].trim());
         try {
-            schedule.put("capacity", Integer.parseInt(parts[4].trim()));
+            schedule.put("capacity", Integer.parseInt(parts[5].trim()));
         } catch (NumberFormatException ex) {
             throw new IOException("排班第 " + lineNo + " 行容量非数字");
         }
@@ -308,12 +543,12 @@ public class AdminMainController {
 
     private boolean looksLikeDoctorHeader(String line) {
         String lower = line.toLowerCase(Locale.ROOT);
-        return lower.contains("name") && lower.contains("password");
+        return lower.contains("did") && lower.contains("name") && lower.contains("password");
     }
 
     private boolean looksLikeScheduleHeader(String line) {
         String lower = line.toLowerCase(Locale.ROOT);
-        return lower.contains("name") && lower.contains("department");
+        return lower.contains("did") && lower.contains("name") && lower.contains("department");
     }
 
     private String sha256(String input) {

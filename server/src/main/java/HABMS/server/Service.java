@@ -383,7 +383,15 @@ final class Service implements Runnable {
         for (JsonNode node : schedulesNode) {
             String name = requiredText(node, "name");
             String department = requiredText(node, "department");
-            DoctorAccount doctor = findDoctorByNameAndDepartment(name, department);
+            String did = textOrNull(node, "did");
+            
+            DoctorAccount doctor;
+            if (did != null && !did.isBlank()) {
+                doctor = db.FindDoctorAccount(did, "");
+            } else {
+                doctor = findDoctorByNameAndDepartment(name, department);
+            }
+
             if (doctor == null) {
                 return err("doctor not exists");
             }
@@ -495,40 +503,48 @@ final class Service implements Runnable {
             return err("doctors array required");
         }
 
-        // First validate and prepare all doctor objects to avoid partial inserts on validation error
-        List<DoctorAccount> toCreate = new ArrayList<>();
+        List<DoctorAccount> resultList = new ArrayList<>();
+
         for (JsonNode node : doctorsNode) {
             String name = requiredText(node, "name");
-            String passwordHex = requiredText(node, "passwordHex");
+            String passwordHex = textOrNull(node, "passwordHex");
             boolean admin = optionalBool(node, "admin", false);
             String department = requiredText(node, "department");
             String describe = textOrNull(node, "describe");
+            String did = textOrNull(node, "did");
 
             if (!departments.isEmpty() && !departments.contains(department)) {
                 return err("department not exists");
             }
 
-            toCreate.add(DoctorAccount.create(name, passwordHex, admin, department, describe == null ? "" : describe));
-        }
-
-        List<String> insertedDid = new ArrayList<>();
-        try {
-            for (DoctorAccount doctor : toCreate) {
-                db.InsertDoctorAccount(doctor);
-                insertedDid.add(doctor.getDid());
-            }
-            return ok(toCreate.stream().map(this::view).toList());
-        } catch (Exception e) {
-            // Roll back already-inserted doctors to avoid partial/broken import
-            for (String did : insertedDid) {
-                try {
-                    db.DelDoctorAccount(did);
-                } catch (Exception ignore) {
-                    // best-effort rollback
+            if (did != null && !did.isBlank()) {
+                DoctorAccount existing = db.FindDoctorAccount(did, "");
+                if (existing != null && existing.getDid().equals(did)) {
+                    // Update existing
+                    String newPass = (passwordHex != null && !passwordHex.isEmpty()) ? passwordHex : existing.getPasswordHex();
+                    DoctorAccount updated = new DoctorAccount(did, name, newPass, admin, department, describe == null ? "" : describe);
+                    db.UpdateDoctorAccount(updated);
+                    resultList.add(updated);
+                } else {
+                    // Insert new with specific ID
+                    if (passwordHex == null || passwordHex.isEmpty()) {
+                        return err("password required for new doctor");
+                    }
+                    DoctorAccount newDoc = new DoctorAccount(did, name, passwordHex, admin, department, describe == null ? "" : describe);
+                    db.InsertDoctorAccount(newDoc);
+                    resultList.add(newDoc);
                 }
+            } else {
+                // Create new with auto-generated ID
+                if (passwordHex == null || passwordHex.isEmpty()) {
+                    return err("password required for new doctor");
+                }
+                DoctorAccount newDoc = DoctorAccount.create(name, passwordHex, admin, department, describe == null ? "" : describe);
+                db.InsertDoctorAccount(newDoc);
+                resultList.add(newDoc);
             }
-            return err("admin_add_doctors failed, rolled back: " + e.getMessage());
         }
+        return ok(resultList.stream().map(this::view).toList());
     }
 
     private boolean isLoggedIn() {
