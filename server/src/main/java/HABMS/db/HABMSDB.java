@@ -256,6 +256,23 @@ public class HABMSDB {
         return list.toArray(new Schedule[0]);
     }
 
+    public Schedule[] FindScheduleByTimeInDepartment(LocalDateTime time, String department) throws SQLException {
+        String sql = "SELECT s.* FROM Schedule s JOIN Doctor d ON s.DID=d.DID WHERE s.STime<=? AND s.ETime>=? AND d.Department=?";
+        List<Schedule> list = new ArrayList<>();
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            Timestamp ts = Timestamp.valueOf(time);
+            ps.setTimestamp(1, ts);
+            ps.setTimestamp(2, ts);
+            ps.setString(3, department);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapSchedule(rs));
+                }
+            }
+        }
+        return list.toArray(new Schedule[0]);
+    }
+
     // change
     public void ChangeAccountInfo(Account account) throws SQLException {
         String sql = "UPDATE Account SET Name=?, Password=?, Phone=? WHERE AID=?";
@@ -282,11 +299,45 @@ public class HABMSDB {
     }
 
     public void ChangeAppointmentStatu(String apid, AppointmentStatus statu) throws SQLException {
-        String sql = "UPDATE Appointment SET Statu=? WHERE APID=?";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, statu.name());
-            ps.setString(2, apid);
-            ps.executeUpdate();
+        String selectSql = "SELECT Statu, SID FROM Appointment WHERE APID=? FOR UPDATE";
+        String updateAppointmentSql = "UPDATE Appointment SET Statu=? WHERE APID=?";
+        String restoreScheduleResSql = "UPDATE Schedule SET Res=Res+1 WHERE SID=?";
+
+        try (Connection conn = getConnection()) {
+            boolean oldAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            AppointmentStatus oldStatus;
+            int sid;
+            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+                ps.setString(1, apid);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        conn.setAutoCommit(oldAutoCommit);
+                        return;
+                    }
+                    oldStatus = AppointmentStatus.valueOf(rs.getString("Statu"));
+                    sid = rs.getInt("SID");
+                }
+            }
+
+            // Only restore capacity when changing from Ok to Abandon
+            if (oldStatus == AppointmentStatus.Ok && statu == AppointmentStatus.Abandon) {
+                try (PreparedStatement ps = conn.prepareStatement(restoreScheduleResSql)) {
+                    ps.setInt(1, sid);
+                    ps.executeUpdate();
+                }
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(updateAppointmentSql)) {
+                ps.setString(1, statu.name());
+                ps.setString(2, apid);
+                ps.executeUpdate();
+            }
+
+            conn.commit();
+            conn.setAutoCommit(oldAutoCommit);
         }
     }
 
@@ -396,6 +447,7 @@ public class HABMSDB {
         LocalDateTime sTime = st != null ? st.toLocalDateTime() : null;
         LocalDateTime eTime = et != null ? et.toLocalDateTime() : null;
         return new Appointment(
+                rs.getInt("SerialNumber"),
                 rs.getString("APID"),
                 rs.getString("AID"),
                 rs.getString("DID"),

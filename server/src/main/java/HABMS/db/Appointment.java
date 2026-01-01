@@ -5,6 +5,7 @@ import java.util.Objects;
 
 /** 预定订单数据对象 */
 public final class Appointment {
+    private final int serialNumber;
     private final String apid;
     private final String aid;
     private final String did;
@@ -14,8 +15,9 @@ public final class Appointment {
     private final LocalDateTime endTime;
 
     /** 一般初始化方法用于从数据库提取数据 */
-    public Appointment(String apid, String aid, String did, int sid, AppointmentStatus status,
+    public Appointment(int serialNumber, String apid, String aid, String did, int sid, AppointmentStatus status,
                        LocalDateTime startTime, LocalDateTime endTime) {
+        this.serialNumber = serialNumber;
         this.apid = Objects.requireNonNull(apid);
         this.aid = Objects.requireNonNull(aid);
         this.did = Objects.requireNonNull(did);
@@ -28,7 +30,11 @@ public final class Appointment {
     /** create工厂方法用于创建带新APID的对象 */
     public static Appointment create(String aid, String did, int sid, AppointmentStatus status,
                                      LocalDateTime startTime, LocalDateTime endTime) {
-        return new Appointment(IdGenerator.newApid(), aid, did, sid, status, startTime, endTime);
+        return new Appointment(0, IdGenerator.newApid(), aid, did, sid, status, startTime, endTime);
+    }
+
+    public int getSerialNumber() {
+        return serialNumber;
     }
 
     public String getApid() {
