@@ -36,6 +36,7 @@ public class AdminMainController {
 
     @FXML private Label doctorFileLabel;
     @FXML private Label doctorImportResult;
+    @FXML private Label doctorListResult;
     @FXML private Label scheduleFileLabel;
     @FXML private Label scheduleImportResult;
     @FXML private TableView<Doctor> doctorTable;
@@ -66,6 +67,10 @@ public class AdminMainController {
     private void handleRefreshDoctors(ActionEvent event) {
         if (refreshDoctorBtn != null) {
             refreshDoctorBtn.setDisable(true);
+        }
+
+        if (doctorListResult != null) {
+            doctorListResult.setText("");
         }
 
         Task<List<Doctor>> task = new Task<>() {
@@ -108,8 +113,9 @@ public class AdminMainController {
         });
 
         task.setOnFailed(e -> {
-            doctorImportResult.setStyle("-fx-text-fill: #c0392b;");
-            doctorImportResult.setText("医生列表刷新失败: " + e.getSource().getException().getMessage());
+            if (doctorListResult != null) {
+                doctorListResult.setText("医生列表刷新失败: " + e.getSource().getException().getMessage());
+            }
             if (refreshDoctorBtn != null) {
                 refreshDoctorBtn.setDisable(false);
             }

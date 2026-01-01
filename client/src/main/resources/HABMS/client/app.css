@@ -1,0 +1,212 @@
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+}
+
+.app-root {
+    -fx-background-color: #f6f8fc;
+}
+
+.app-title {
+    -fx-fill: #1f2a44;
+    -fx-font-size: 26px;
+    -fx-font-weight: 700;
+}
+
+.header-bar {
+    -fx-background-color: linear-gradient(to right, #1b5cff, #4b8bff);
+    -fx-padding: 14 18 14 18;
+}
+
+.header-title {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+}
+
+.header-subtitle {
+    -fx-text-fill: rgba(255, 255, 255, 0.92);
+}
+
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: rgba(31, 42, 68, 0.10);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.10), 18, 0.20, 0, 6);
+}
+
+.tab-pane {
+    -fx-background-color: transparent;
+}
+
+.tab-pane > .tab-header-area {
+    -fx-padding: 6 8 0 8;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: transparent;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: rgba(27, 92, 255, 0.10);
+    -fx-background-radius: 10 10 0 0;
+}
+
+#loginTabs > .tab-header-area {
+    -fx-background-color: transparent;
+}
+
+#loginTabs > .tab-header-area > .tab-header-background {
+    -fx-background-color: transparent;
+}
+
+#loginTabs {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: #1b5cff;
+    -fx-background-radius: 10;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab .tab-label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: 600;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:hover .tab-label {
+    -fx-text-fill: #1b5cff;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:selected .tab-label {
+    -fx-text-fill: white;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-padding: 6 12 6 12;
+    -fx-border-color: rgba(27, 92, 255, 0.30);
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:hover {
+    -fx-background-color: rgba(27, 92, 255, 0.08);
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:selected:hover {
+    -fx-background-color: #1b5cff;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:selected:hover .tab-label {
+    -fx-text-fill: white;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+#loginTabs > .tab-header-area > .headers-region > .tab:focused .focus-indicator {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab .tab-label {
+    -fx-text-fill: #334155;
+    -fx-font-weight: 600;
+}
+
+.primary-button {
+    -fx-background-radius: 10;
+    -fx-padding: 8 14 8 14;
+    -fx-font-weight: 600;
+    -fx-background-color: #1b5cff;
+    -fx-text-fill: white;
+}
+
+.primary-button:hover {
+    -fx-background-color: #164de0;
+}
+
+.secondary-button {
+    -fx-background-radius: 10;
+    -fx-padding: 8 14 8 14;
+    -fx-font-weight: 600;
+    -fx-background-color: rgba(31, 42, 68, 0.08);
+    -fx-text-fill: #1f2a44;
+}
+
+.secondary-button:hover {
+    -fx-background-color: rgba(31, 42, 68, 0.12);
+}
+
+.danger-button {
+    -fx-background-radius: 10;
+    -fx-padding: 8 14 8 14;
+    -fx-font-weight: 600;
+    -fx-background-color: rgba(220, 38, 38, 0.12);
+    -fx-text-fill: #b91c1c;
+}
+
+.danger-button:hover {
+    -fx-background-color: rgba(220, 38, 38, 0.18);
+}
+
+.text-field, .password-field, .combo-box-base, .text-area {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: rgba(31, 42, 68, 0.18);
+    -fx-background-color: white;
+}
+
+.text-field:focused, .password-field:focused, .combo-box-base:focused, .text-area:focused {
+    -fx-border-color: rgba(27, 92, 255, 0.60);
+    -fx-effect: dropshadow(gaussian, rgba(27, 92, 255, 0.20), 14, 0.20, 0, 0);
+}
+
+.muted {
+    -fx-text-fill: #64748b;
+}
+
+.error-label {
+    -fx-text-fill: #b91c1c;
+}
+
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: rgba(31, 42, 68, 0.10);
+}
+
+.table-view .column-header-background {
+    -fx-background-color: rgba(31, 42, 68, 0.04);
+    -fx-background-radius: 12 12 0 0;
+}
+
+.table-row-cell:filled:selected, .table-row-cell:filled:selected:hover {
+    -fx-background-color: rgba(27, 92, 255, 0.12);
+}
+
+.list-view {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: rgba(31, 42, 68, 0.10);
+}
+
+.split-pane {
+    -fx-background-color: transparent;
+}
+
+.split-pane-divider {
+    -fx-background-color: rgba(31, 42, 68, 0.12);
+}

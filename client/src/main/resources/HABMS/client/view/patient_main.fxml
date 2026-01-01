@@ -20,7 +20,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.PatientMainController">
+<BorderPane prefHeight="600.0" prefWidth="900.0" styleClass="border-pane app-root" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.PatientMainController">
    <center>
       <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
         <tabs>
@@ -96,9 +96,9 @@
                                                       </TableView>
                                                       <HBox alignment="CENTER_RIGHT" prefHeight="50.0" prefWidth="200.0" spacing="10.0">
                                                          <children>
-                                                            <Label fx:id="bookingStatusLabel" textFill="RED" />
-                                                            <Button mnemonicParsing="false" onAction="#handleRefreshSchedules" text="刷新排班" />
-                                                            <Button mnemonicParsing="false" onAction="#handleBookAppointment" text="确认预约" />
+                                                             <Label fx:id="bookingStatusLabel" styleClass="label error-label" />
+                                                             <Button mnemonicParsing="false" onAction="#handleRefreshSchedules" styleClass="button secondary-button" text="刷新排班" />
+                                                             <Button mnemonicParsing="false" onAction="#handleBookAppointment" styleClass="button primary-button" text="确认预约" />
                                                          </children>
                                                          <padding>
                                                             <Insets right="20.0" />
@@ -126,9 +126,9 @@
                            <children>
                               <HBox alignment="CENTER_LEFT" prefHeight="50.0" prefWidth="200.0" spacing="10.0">
                                  <children>
-                                    <Button mnemonicParsing="false" onAction="#handleRefreshAppointments" text="刷新列表" />
-                                    <Button mnemonicParsing="false" onAction="#handleCancelAppointment" text="取消预约" />
-                                    <Label fx:id="apptStatusLabel" textFill="RED" />
+                                     <Button mnemonicParsing="false" onAction="#handleRefreshAppointments" styleClass="button secondary-button" text="刷新列表" />
+                                     <Button mnemonicParsing="false" onAction="#handleCancelAppointment" styleClass="button secondary-button" text="取消预约" />
+                                     <Label fx:id="apptStatusLabel" styleClass="label error-label" />
                                  </children>
                                  <padding>
                                     <Insets left="20.0" />
@@ -171,19 +171,19 @@
                               <Label text="手机号:" GridPane.rowIndex="2" />
                               <Label text="性别:" GridPane.rowIndex="3" />
                               <TextField fx:id="profileNameField" GridPane.columnIndex="1" />
-                              <TextField fx:id="profilePidField" editable="false" style="-fx-background-color: #eee;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              <TextField fx:id="profilePidField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                               <TextField fx:id="profilePhoneField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                               <ComboBox fx:id="profileSexCombo" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                               <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="20.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
                                  <children>
-                                    <Button mnemonicParsing="false" onAction="#handleUpdateProfile" text="保存修改" />
-                                    <Button mnemonicParsing="false" onAction="#handleLogout" text="退出登录" />
-                                 </children>
+                                     <Button mnemonicParsing="false" onAction="#handleUpdateProfile" styleClass="button primary-button" text="保存修改" />
+                                     <Button mnemonicParsing="false" onAction="#handleLogout" styleClass="button secondary-button" text="退出登录" />
+                                  </children>
                               </HBox>
-                              <Button mnemonicParsing="false" onAction="#handleDeleteAccount" style="-fx-background-color: #ffcccc;" text="注销账号" textFill="RED" GridPane.rowIndex="5" />
+                              <Button mnemonicParsing="false" onAction="#handleDeleteAccount" styleClass="button danger-button" text="注销账号" GridPane.rowIndex="5" />
                            </children>
                         </GridPane>
-                        <Label fx:id="profileStatusLabel" layoutX="250.0" layoutY="400.0" textFill="RED" />
+                        <Label fx:id="profileStatusLabel" layoutX="250.0" layoutY="400.0" styleClass="label error-label" />
                      </children>
                   </AnchorPane>
                </content>

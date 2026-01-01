@@ -5,17 +5,17 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.DoctorMainController">
+<BorderPane prefHeight="600.0" prefWidth="900.0" styleClass="border-pane app-root" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.DoctorMainController">
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-background-color: #2c3e50; -fx-padding: 15;">
-            <Label text="飞马医院 - 医生/管理端" textFill="WHITE">
+        <HBox alignment="CENTER_LEFT" spacing="20" styleClass="header-bar">
+            <Label text="飞马医院 - 医生/管理端" styleClass="header-title">
                 <font>
                     <Font size="20.0" />
                 </font>
             </Label>
             <Region HBox.hgrow="ALWAYS" />
-            <Label fx:id="welcomeLabel" text="欢迎, 医生" textFill="WHITE" />
-            <Button onAction="#handleLogout" text="退出登录" />
+            <Label fx:id="welcomeLabel" text="欢迎, 医生" styleClass="header-subtitle" />
+            <Button onAction="#handleLogout" styleClass="secondary-button" text="退出登录" />
         </HBox>
     </top>
     <center>
@@ -27,7 +27,7 @@
                             <Label text="我的排班表">
                                 <font><Font size="18.0" /></font>
                             </Label>
-                            <Button onAction="#handleRefreshSchedules" text="刷新" />
+                            <Button onAction="#handleRefreshSchedules" styleClass="secondary-button" text="刷新" />
                         </HBox>
                         <TableView fx:id="scheduleTable" VBox.vgrow="ALWAYS">
                             <columns>
@@ -47,9 +47,9 @@
                                 <font><Font size="18.0" /></font>
                             </Label>
                             <ComboBox fx:id="workScheduleCombo" promptText="选择当前排班" prefWidth="200"/>
-                            <Button onAction="#handleRefreshAppointments" text="刷新列表" />
+                            <Button onAction="#handleRefreshAppointments" styleClass="secondary-button" text="刷新列表" />
                             <Region HBox.hgrow="ALWAYS" />
-                            <Button onAction="#handleCallNext" style="-fx-background-color: #27ae60; -fx-text-fill: white;" text="呼叫下一位" />
+                            <Button onAction="#handleCallNext" styleClass="primary-button" text="呼叫下一位" />
                         </HBox>
                         <TableView fx:id="appointmentTable" VBox.vgrow="ALWAYS">
                             <columns>
@@ -60,7 +60,7 @@
                             </columns>
                         </TableView>
                         <TextArea fx:id="diagnosisArea" promptText="诊疗记录/备注..." VBox.vgrow="ALWAYS" />
-                        <Button text="完成诊疗" onAction="#handleCompleteDiagnosis" maxWidth="Infinity"/>
+                        <Button text="完成诊疗" onAction="#handleCompleteDiagnosis" styleClass="primary-button" maxWidth="Infinity"/>
                     </VBox>
                 </Tab>
                 <Tab fx:id="managementTab" text="医院管理">

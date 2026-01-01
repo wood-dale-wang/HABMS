@@ -1,80 +1,123 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import java.lang.String?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.LoginController">
+<VBox alignment="CENTER" fillWidth="false" spacing="20.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.LoginController">
+    <styleClass>
+        <String fx:value="app-root" />
+    </styleClass>
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
    <children>
       <Text strokeType="OUTSIDE" strokeWidth="0.0" text="飞马星球医院预约挂号系统">
+         <styleClass>
+            <String fx:value="app-title" />
+         </styleClass>
          <font>
             <Font size="24.0" />
          </font>
       </Text>
-      <TabPane tabClosingPolicy="UNAVAILABLE">
-        <tabs>
-          <Tab text="登录">
-            <content>
-              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="300.0" prefWidth="400.0">
-                     <children>
-                        <VBox alignment="CENTER" layoutX="50.0" layoutY="25.0" prefHeight="250.0" prefWidth="300.0" spacing="15.0">
+      <StackPane maxWidth="560.0">
+         <styleClass>
+            <String fx:value="card" />
+         </styleClass>
+         <padding>
+            <Insets bottom="18.0" left="18.0" right="18.0" top="18.0" />
+         </padding>
+         <children>
+            <TabPane id="loginTabs" prefWidth="520.0" tabClosingPolicy="UNAVAILABLE">
+               <tabs>
+                  <Tab text="登录">
+                     <content>
+                        <StackPane alignment="CENTER" prefHeight="360.0">
                            <children>
-                              <HBox alignment="CENTER" spacing="20.0">
+                              <VBox alignment="CENTER" spacing="12.0">
                                  <children>
-                                    <RadioButton fx:id="patientRadio" mnemonicParsing="false" selected="true" text="患者/用户" />
-                                    <RadioButton fx:id="doctorRadio" mnemonicParsing="false" text="医生/管理员" />
-                                 </children>
-                              </HBox>
-                              <VBox fx:id="patientLoginBox" alignment="CENTER" spacing="10.0">
-                                 <children>
-                                    <TextField fx:id="pidField" promptText="身份证号 / 手机号" />
+                                    <HBox alignment="CENTER" spacing="20.0">
+                                       <children>
+                                          <RadioButton fx:id="patientRadio" mnemonicParsing="false" selected="true" text="患者/用户" />
+                                          <RadioButton fx:id="doctorRadio" mnemonicParsing="false" text="医生/管理员" />
+                                       </children>
+                                    </HBox>
+                                    <VBox fx:id="patientLoginBox" alignment="CENTER" spacing="10.0">
+                                       <children>
+                                          <TextField fx:id="pidField" prefWidth="320.0" promptText="身份证号 / 手机号" />
+                                       </children>
+                                    </VBox>
+                                    <VBox fx:id="doctorLoginBox" alignment="CENTER" spacing="10.0" visible="false" managed="false">
+                                       <children>
+                                          <TextField fx:id="doctorNameField" prefWidth="320.0" promptText="医生姓名" />
+                                          <TextField fx:id="doctorDeptField" prefWidth="320.0" promptText="科室" />
+                                       </children>
+                                    </VBox>
+                                    <PasswordField fx:id="passwordField" prefWidth="320.0" promptText="密码" />
+                                    <Button mnemonicParsing="false" onAction="#handleLogin" prefHeight="36.0" prefWidth="320.0" text="登录">
+                                       <styleClass>
+                                          <String fx:value="button" />
+                                          <String fx:value="primary-button" />
+                                       </styleClass>
+                                    </Button>
+                                    <Label fx:id="errorLabel" wrapText="true">
+                                       <styleClass>
+                                          <String fx:value="label" />
+                                          <String fx:value="error-label" />
+                                       </styleClass>
+                                    </Label>
                                  </children>
                               </VBox>
-                              <VBox fx:id="doctorLoginBox" alignment="CENTER" spacing="10.0" visible="false" managed="false">
+                           </children>
+                           <padding>
+                              <Insets bottom="10.0" top="10.0" />
+                           </padding>
+                        </StackPane>
+                     </content>
+                  </Tab>
+                  <Tab text="注册">
+                     <content>
+                        <StackPane alignment="CENTER" prefHeight="360.0">
+                           <children>
+                              <VBox alignment="CENTER" spacing="10.0">
                                  <children>
-                                    <TextField fx:id="doctorNameField" promptText="医生姓名" />
-                                    <TextField fx:id="doctorDeptField" promptText="科室" />
+                                    <TextField fx:id="regNameField" prefWidth="320.0" promptText="姓名" />
+                                    <TextField fx:id="regPidField" prefWidth="320.0" promptText="身份证号 (18位)" />
+                                    <TextField fx:id="regPhoneField" prefWidth="320.0" promptText="手机号" />
+                                    <PasswordField fx:id="regPasswordField" prefWidth="320.0" promptText="密码" />
+                                    <HBox alignment="CENTER" spacing="10.0">
+                                       <children>
+                                          <Label text="性别:" />
+                                          <ComboBox fx:id="regSexCombo" prefWidth="120.0" />
+                                       </children>
+                                    </HBox>
+                                    <Button mnemonicParsing="false" onAction="#handleRegister" prefHeight="36.0" prefWidth="320.0" text="注册">
+                                       <styleClass>
+                                          <String fx:value="button" />
+                                          <String fx:value="primary-button" />
+                                       </styleClass>
+                                    </Button>
+                                    <Label fx:id="regErrorLabel" wrapText="true">
+                                       <styleClass>
+                                          <String fx:value="label" />
+                                          <String fx:value="error-label" />
+                                       </styleClass>
+                                    </Label>
                                  </children>
                               </VBox>
-                              <PasswordField fx:id="passwordField" promptText="密码" />
-                              <Button mnemonicParsing="false" onAction="#handleLogin" prefHeight="30.0" prefWidth="300.0" text="登录" />
-                              <Label fx:id="errorLabel" textFill="RED" />
                            </children>
-                        </VBox>
-                     </children>
-                  </AnchorPane>
-            </content>
-          </Tab>
-          <Tab text="注册">
-            <content>
-              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="350.0" prefWidth="400.0">
-                     <children>
-                        <VBox alignment="CENTER" layoutX="50.0" layoutY="10.0" prefHeight="330.0" prefWidth="300.0" spacing="10.0">
-                           <children>
-                              <TextField fx:id="regNameField" promptText="姓名" />
-                              <TextField fx:id="regPidField" promptText="身份证号 (18位)" />
-                              <TextField fx:id="regPhoneField" promptText="手机号" />
-                              <PasswordField fx:id="regPasswordField" promptText="密码" />
-                              <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                 <children>
-                                    <Label text="性别:" />
-                                    <ComboBox fx:id="regSexCombo" prefWidth="100.0" />
-                                 </children>
-                              </HBox>
-                              <Button mnemonicParsing="false" onAction="#handleRegister" prefWidth="300.0" text="注册" />
-                              <Label fx:id="regErrorLabel" textFill="RED" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </AnchorPane>
-            </content>
-          </Tab>
-        </tabs>
-      </TabPane>
+                           <padding>
+                              <Insets bottom="10.0" top="10.0" />
+                           </padding>
+                        </StackPane>
+                     </content>
+                  </Tab>
+               </tabs>
+            </TabPane>
+         </children>
+      </StackPane>
    </children>
-</VBox>
+ </VBox>

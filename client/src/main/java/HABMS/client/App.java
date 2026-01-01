@@ -20,6 +20,7 @@ public class App extends Application {
     public void start(Stage stage) throws IOException {
         primaryStage = stage;
         scene = new Scene(loadFXML("view/login"), 800, 600);
+        scene.getStylesheets().add(App.class.getResource("app.css").toExternalForm());
         stage.setScene(scene);
         stage.setTitle("飞马星球医院预约挂号系统");
         stage.show();
