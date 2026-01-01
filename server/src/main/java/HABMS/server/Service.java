@@ -381,6 +381,9 @@ final class Service implements Runnable {
         List<Schedule> newSchedules = new ArrayList<>();
         for (JsonNode node : schedulesNode) {
             String did = requiredText(node, "did");
+            if (db.FindDoctorAccount(did, null) == null) {
+                return err("did not exists");
+            }
             LocalDateTime start = LocalDateTime.parse(requiredText(node, "startTime"));
             LocalDateTime end = LocalDateTime.parse(requiredText(node, "endTime"));
             int capacity = requiredInt(node, "capacity");
