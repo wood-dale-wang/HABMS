@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS Doctor (
     Password BINARY(64) NOT NULL,
     Admin BOOLEAN NOT NULL,
     Department VARCHAR(30) NOT NULL,
-    Describe VARCHAR(200)
+    Description VARCHAR(200)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS Schedule (
@@ -38,6 +38,6 @@ CREATE TABLE IF NOT EXISTS Appointment (
     Statu ENUM('Ok','Abandon','Done') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO Doctor(DID,Name,Password,Admin,Department,Describe)
+INSERT INTO Doctor(DID,Name,Password,Admin,Department,Description)
 VALUES ('00000000','Admin','c1c224b03cd9bc7b6a86d77f5dace40191766c485cd55dc48caf9ac873335d6f',TRUE,'管理',NULL)
 ON DUPLICATE KEY UPDATE Name=VALUES(Name);

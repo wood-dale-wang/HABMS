@@ -42,14 +42,14 @@ public class HABMSDB {
     }
 
     public void InsertDoctorAccount(DoctorAccount doctor) throws SQLException {
-        String sql = "INSERT INTO Doctor(DID,Name,Password,Admin,Department,Describe) VALUES (?,?,?,?,?,?)";
+        String sql = "INSERT INTO Doctor(DID,Name,Password,Admin,Department,Description) VALUES (?,?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, doctor.getDid());
             ps.setString(2, doctor.getName());
             ps.setString(3, doctor.getPasswordHex());
             ps.setBoolean(4, doctor.isAdmin());
             ps.setString(5, doctor.getDepartment());
-            ps.setString(6, doctor.getDescribe());
+            ps.setString(6, doctor.getDescription());
             ps.executeUpdate();
         }
     }
@@ -286,13 +286,13 @@ public class HABMSDB {
     }
 
     public void ChangeDoctorAccountInfo(DoctorAccount doctor) throws SQLException {
-        String sql = "UPDATE Doctor SET Name=?, Password=?, Admin=?, Department=?, Describe=? WHERE DID=?";
+        String sql = "UPDATE Doctor SET Name=?, Password=?, Admin=?, Department=?, Description=? WHERE DID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, doctor.getName());
             ps.setString(2, doctor.getPasswordHex());
             ps.setBoolean(3, doctor.isAdmin());
             ps.setString(4, doctor.getDepartment());
-            ps.setString(5, doctor.getDescribe());
+            ps.setString(5, doctor.getDescription());
             ps.setString(6, doctor.getDid());
             ps.executeUpdate();
         }
@@ -424,7 +424,7 @@ public class HABMSDB {
                 rs.getString("Password"),
                 rs.getBoolean("Admin"),
                 rs.getString("Department"),
-                rs.getString("Describe")
+                rs.getString("Description")
         );
     }
 

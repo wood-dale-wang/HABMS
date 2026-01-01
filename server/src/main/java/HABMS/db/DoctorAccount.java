@@ -9,21 +9,21 @@ public final class DoctorAccount {
     private final String passwordHex;
     private final boolean admin;
     private final String department;
-    private final String describe;
+    private final String description;
 
     /** 一般初始化方法用于从数据库提取数据 */
-    public DoctorAccount(String did, String name, String passwordHex, boolean admin, String department, String describe) {
+    public DoctorAccount(String did, String name, String passwordHex, boolean admin, String department, String description) {
         this.did = Objects.requireNonNull(did);
         this.name = Objects.requireNonNull(name);
         this.passwordHex = Objects.requireNonNull(passwordHex);
         this.admin = admin;
         this.department = Objects.requireNonNull(department);
-        this.describe = describe;
+        this.description = description;
     }
 
     /** create工厂方法用于创建带新DID的对象 */
-    public static DoctorAccount create(String name, String passwordHex, boolean admin, String department, String describe) {
-        return new DoctorAccount(IdGenerator.newDid(), name, passwordHex, admin, department, describe);
+    public static DoctorAccount create(String name, String passwordHex, boolean admin, String department, String Description) {
+        return new DoctorAccount(IdGenerator.newDid(), name, passwordHex, admin, department, Description);
     }
 
     public String getDid() {
@@ -46,7 +46,7 @@ public final class DoctorAccount {
         return department;
     }
 
-    public String getDescribe() {
-        return describe;
+    public String getDescription() {
+        return description;
     }
 }

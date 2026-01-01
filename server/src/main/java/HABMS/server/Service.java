@@ -550,7 +550,7 @@ final class Service implements Runnable {
         map.put("name", doctor.getName());
         map.put("admin", doctor.isAdmin());
         map.put("department", doctor.getDepartment());
-        map.put("describe", doctor.getDescribe());
+        map.put("description", doctor.getDescription());
         return map;
     }
 
