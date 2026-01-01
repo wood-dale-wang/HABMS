@@ -130,15 +130,21 @@ Service 以每行一个 JSON 消息进行通信。客户端发送形如：
 
 ### admin_add_doctors
 
-- data：`doctors` 数组，每项含 `name,passwordHex,department`，可选 `admin,describe`
-- 逻辑：为每项生成 DID，插入 Doctor 表
-- 返回：新医生列表（含 DID，描述字段为 description）
-- 失败：未登录、非 admin、科室不存在、数据缺失
+- data：`doctors` 数组，每项含 `name,department`，可选 `passwordHex,admin,describe,did`
+- 逻辑：
+    - 如果提供 `did` 且该医生已存在：执行更新操作（覆盖姓名、科室、描述、管理员状态；若 `passwordHex` 非空则更新密码）。
+    - 如果提供 `did` 但医生不存在：使用指定 `did` 创建新医生（需提供 `passwordHex`）。
+    - 如果未提供 `did`：自动生成 `did` 并创建新医生（需提供 `passwordHex`）。
+- 返回：新/更新后的医生列表（含 DID，描述字段为 description）
+- 失败：未登录、非 admin、科室不存在、数据缺失（如新建时缺密码）
 
 ### admin_add_schedules
 
-- data：`schedules` 数组，每项 `name,department,startTime,endTime,capacity`
-- 逻辑：按 `(name,department)` 查医生（需存在且唯一），检查与已存在及新建排班的时间重叠（同 did），通过后批量插入
+- data：`schedules` 数组，每项 `name,department,startTime,endTime,capacity`，可选 `did`
+- 逻辑：
+    - 优先使用 `did` 查找医生。
+    - 若无 `did`，则按 `(name,department)` 查医生（需存在且唯一）。
+    - 检查与已存在及新建排班的时间重叠（同 did），通过后批量插入。
 - 返回：新 Schedule 列表
 - 失败：未登录、非 admin、医生不存在、排班时间重叠、字段缺失
 
