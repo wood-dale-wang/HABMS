@@ -1,0 +1,275 @@
+package HABMS.client.controller;
+
+import HABMS.client.App;
+import HABMS.client.Session;
+import HABMS.client.model.Appointment;
+import HABMS.client.model.Doctor;
+import HABMS.client.model.Request;
+import HABMS.client.model.Response;
+import HABMS.client.model.Schedule;
+import HABMS.client.net.NetworkClient;
+import HABMS.client.util.JsonUtil;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class DoctorMainController {
+
+    @FXML private Label welcomeLabel;
+    @FXML private TabPane mainTabPane;
+    @FXML private Tab managementTab;
+
+    // Schedule Tab
+    @FXML private TableView<Schedule> scheduleTable;
+    @FXML private TableColumn<Schedule, Integer> colSchId;
+    @FXML private TableColumn<Schedule, String> colSchStart;
+    @FXML private TableColumn<Schedule, String> colSchEnd;
+    @FXML private TableColumn<Schedule, Integer> colSchCap;
+    @FXML private TableColumn<Schedule, Integer> colSchRes;
+
+    // Appointment Tab
+    @FXML private TableView<Appointment> appointmentTable;
+    @FXML private TableColumn<Appointment, String> colAppId;
+    @FXML private TableColumn<Appointment, String> colAppPid;
+    @FXML private TableColumn<Appointment, String> colAppTime;
+    @FXML private TableColumn<Appointment, String> colAppStatus;
+    @FXML private TextArea diagnosisArea;
+    @FXML private ComboBox<Schedule> workScheduleCombo;
+
+    // Management Tab
+    @FXML private Label importFileLabel;
+    private File selectedImportFile;
+
+    // Profile Tab
+    @FXML private TextField profileDid;
+    @FXML private TextField profileName;
+    @FXML private TextField profileDept;
+    @FXML private TextArea profileDesc;
+    @FXML private CheckBox profileAdmin;
+
+    @FXML
+    public void initialize() {
+        Doctor doctor = Session.getCurrentDoctor();
+        if (doctor == null) {
+            try {
+                App.setRoot("view/login", "登录");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+
+        welcomeLabel.setText("欢迎, " + doctor.getName() + (doctor.isAdmin() ? " (管理员)" : ""));
+
+        // Setup Columns
+        colSchId.setCellValueFactory(new PropertyValueFactory<>("sid"));
+        colSchStart.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+        colSchEnd.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+        colSchCap.setCellValueFactory(new PropertyValueFactory<>("capacity"));
+        colSchRes.setCellValueFactory(new PropertyValueFactory<>("res"));
+
+        colAppId.setCellValueFactory(new PropertyValueFactory<>("apid"));
+        colAppPid.setCellValueFactory(new PropertyValueFactory<>("aid")); // Assuming AID is patient ID
+        colAppTime.setCellValueFactory(new PropertyValueFactory<>("startTime")); 
+        colAppStatus.setCellValueFactory(new PropertyValueFactory<>("statu"));
+
+        // Profile
+        profileDid.setText(doctor.getDid());
+        profileName.setText(doctor.getName());
+        profileDept.setText(doctor.getDepartment());
+        profileDesc.setText(doctor.getDescription());
+        profileAdmin.setSelected(doctor.isAdmin());
+
+        // Management Tab Visibility
+        if (!doctor.isAdmin()) {
+            mainTabPane.getTabs().remove(managementTab);
+        }
+
+        // Setup ComboBox
+        workScheduleCombo.setCellFactory(param -> new ListCell<>() {
+            @Override
+            protected void updateItem(Schedule item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getStartTime() + " - " + item.getEndTime());
+                }
+            }
+        });
+        workScheduleCombo.setButtonCell(workScheduleCombo.getCellFactory().call(null));
+
+        // Load initial data
+        handleRefreshSchedules(null);
+        handleRefreshAppointments(null);
+    }
+
+    @FXML
+    private void handleLogout(ActionEvent event) throws IOException {
+        Session.clear();
+        App.setRoot("view/login", "登录");
+    }
+
+    @FXML
+    private void handleRefreshSchedules(ActionEvent event) {
+        Doctor doctor = Session.getCurrentDoctor();
+        if (doctor == null) return;
+
+        Map<String, String> data = new HashMap<>();
+        data.put("did", doctor.getDid());
+        Request req = new Request("schedule_by_doctor", data);
+        
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws Exception {
+                return NetworkClient.getInstance().sendRequest(req);
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            Response resp = task.getValue();
+            if (resp.isOk()) {
+                try {
+                    List<Schedule> list = JsonUtil.getMapper().convertValue(
+                        resp.getData(), 
+                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Schedule.class)
+                    );
+                    scheduleTable.setItems(FXCollections.observableArrayList(list));
+                    workScheduleCombo.setItems(FXCollections.observableArrayList(list));
+                    if (!list.isEmpty()) {
+                        workScheduleCombo.getSelectionModel().select(0);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        new Thread(task).start();
+    }
+
+    @FXML
+    private void handleRefreshAppointments(ActionEvent event) {
+        Request req = new Request("doctor_appointments", null);
+        
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws Exception {
+                return NetworkClient.getInstance().sendRequest(req);
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            Response resp = task.getValue();
+            if (resp.isOk()) {
+                try {
+                    List<Appointment> list = JsonUtil.getMapper().convertValue(
+                        resp.getData(), 
+                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Appointment.class)
+                    );
+                    appointmentTable.setItems(FXCollections.observableArrayList(list));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            } else {
+                showAlert("错误", "获取预约列表失败: " + resp.getErrInfo());
+            }
+        });
+        new Thread(task).start();
+    }
+
+    @FXML
+    private void handleCallNext(ActionEvent event) {
+        Schedule selectedSchedule = workScheduleCombo.getSelectionModel().getSelectedItem();
+        if (selectedSchedule == null) {
+            showAlert("提示", "请先选择当前工作的排班");
+            return;
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("sid", selectedSchedule.getSid());
+        
+        Request req = new Request("doctor_call_next", data);
+        
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws Exception {
+                return NetworkClient.getInstance().sendRequest(req);
+            }
+        };
+        
+        task.setOnSucceeded(e -> {
+            Response resp = task.getValue();
+            if (resp.isOk()) {
+                try {
+                    Appointment nextApp = JsonUtil.getMapper().convertValue(resp.getData(), Appointment.class);
+                    showAlert("叫号成功", "请 " + nextApp.getAid() + " 号患者 (" + nextApp.getApid() + ") 就诊");
+                    diagnosisArea.setText("正在诊疗: " + nextApp.getAid() + "\n预约号: " + nextApp.getApid());
+                    handleRefreshAppointments(null); // Refresh list to show status change
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            } else {
+                showAlert("提示", "当前排班无更多候诊患者 (" + resp.getErrInfo() + ")");
+            }
+        });
+        
+        new Thread(task).start();
+    }
+
+    @FXML
+    private void handleCompleteDiagnosis(ActionEvent event) {
+        diagnosisArea.clear();
+        showAlert("提示", "诊疗已完成，请呼叫下一位");
+    }
+
+    // Management Handlers
+    @FXML
+    private void handleSelectImportFile(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("选择导入文件");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel Files", "*.xls", "*.xlsx"));
+        selectedImportFile = fileChooser.showOpenDialog(welcomeLabel.getScene().getWindow());
+        if (selectedImportFile != null) {
+            importFileLabel.setText(selectedImportFile.getName());
+        }
+    }
+
+    @FXML
+    private void handleImportData(ActionEvent event) {
+        if (selectedImportFile == null) {
+            showAlert("错误", "请先选择文件");
+            return;
+        }
+        showAlert("提示", "正在导入 " + selectedImportFile.getName() + " (模拟)");
+        // TODO: Implement POI logic here
+    }
+
+    @FXML
+    private void handleExportAppointments(ActionEvent event) {
+        showAlert("提示", "导出功能暂未实现");
+    }
+
+    @FXML
+    private void handleGenerateReport(ActionEvent event) {
+        showAlert("提示", "报表生成功能暂未实现");
+    }
+
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+}

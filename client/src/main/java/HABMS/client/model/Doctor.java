@@ -6,7 +6,7 @@ public class Doctor {
     private String passwordHex;
     private boolean admin;
     private String department;
-    private String describe;
+    private String description;
 
     // Getters and Setters
     public String getDid() { return did; }
@@ -24,6 +24,6 @@ public class Doctor {
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
 
-    public String getDescribe() { return describe; }
-    public void setDescribe(String describe) { this.describe = describe; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }
