@@ -1,22 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.AdminMainController">
-   <center>
-      <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="20.0" BorderPane.alignment="CENTER">
+<BorderPane prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HABMS.client.controller.AdminMainController">
+   <top>
+      <HBox alignment="CENTER_LEFT" spacing="12.0" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets bottom="12.0" left="20.0" right="20.0" top="12.0" />
+         </padding>
          <children>
-            <Label text="欢迎进入管理端">
+            <Label text="管理端" textFill="#2c3e50">
                <font>
-                  <Font size="24.0" />
+                  <Font size="22.0" />
                </font>
             </Label>
-            <Button mnemonicParsing="false" onAction="#handleLogout" text="退出登录" />
+            <Label text="导入医生账户与排班表" textFill="#546e7a" />
          </children>
-      </VBox>
+      </HBox>
+   </top>
+   <center>
+      <ScrollPane fitToWidth="true" BorderPane.alignment="CENTER">
+         <content>
+            <VBox spacing="16.0">
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="10.0" />
+               </padding>
+               <children>
+                  <TitledPane animated="false" expanded="true" text="导入医生账户">
+                     <content>
+                        <VBox spacing="10.0">
+                           <padding>
+                              <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
+                           </padding>
+                           <children>
+                              <Label text="选择 CSV/TXT，密码列需为明文，前端会自动 SHA-256。" wrapText="true" />
+                              <Button mnemonicParsing="false" onAction="#handleImportDoctors" text="选择并导入医生账户" />
+                              <Label fx:id="doctorFileLabel" text="未选择文件" textFill="#546e7a" />
+                              <Label fx:id="doctorImportResult" text="" />
+                              <Label text="示例表格" textFill="#546e7a" />
+                              <TextArea editable="false" prefHeight="120.0" style="-fx-font-family: 'Consolas'; -fx-font-size: 12;" text="name,password,department,admin,description&#10;DrAlice,Pa55word,Cardiology,false,夜班经验丰富&#10;DrBob,S3cur3!,Surgery,true,教研管理员" wrapText="true" />
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
+                  <TitledPane animated="false" expanded="true" text="导入排班表">
+                     <content>
+                        <VBox spacing="10.0">
+                           <padding>
+                              <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
+                           </padding>
+                           <children>
+                              <Label text="选择 CSV/TXT，时间字段使用 ISO-8601（例 2026-01-01T09:00:00）。" wrapText="true" />
+                              <Button mnemonicParsing="false" onAction="#handleImportSchedules" text="选择并导入排班表" />
+                              <Label fx:id="scheduleFileLabel" text="未选择文件" textFill="#546e7a" />
+                              <Label fx:id="scheduleImportResult" text="" />
+                              <Label text="示例表格" textFill="#546e7a" />
+                              <TextArea editable="false" prefHeight="120.0" style="-fx-font-family: 'Consolas'; -fx-font-size: 12;" text="did,startTime,endTime,capacity&#10;D1000001,2026-01-01T09:00:00,2026-01-01T12:00:00,20&#10;D1000002,2026-01-02T14:00:00,2026-01-02T18:00:00,16" wrapText="true" />
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
+                  <TitledPane animated="false" expanded="true" text="查看全部医生">
+                     <content>
+                        <VBox spacing="10.0">
+                           <padding>
+                              <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
+                           </padding>
+                           <children>
+                              <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                 <children>
+                                    <Button fx:id="refreshDoctorBtn" mnemonicParsing="false" onAction="#handleRefreshDoctors" text="刷新医生列表" />
+                                    <Label text="按科室汇总 doctor_query" textFill="#546e7a" />
+                                 </children>
+                              </HBox>
+                              <TableView fx:id="doctorTable" prefHeight="220.0">
+                                 <columns>
+                                    <TableColumn fx:id="colDid" prefWidth="90.0" text="DID" />
+                                    <TableColumn fx:id="colName" prefWidth="120.0" text="姓名" />
+                                    <TableColumn fx:id="colDept" prefWidth="120.0" text="科室" />
+                                    <TableColumn fx:id="colAdmin" prefWidth="80.0" text="管理员" />
+                                    <TableColumn fx:id="colDesc" prefWidth="200.0" text="描述" />
+                                 </columns>
+                              </TableView>
+                              <Label fx:id="doctorImportResult" textFill="#c0392b" />
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
+                  <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#handleLogout" text="退出登录" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+         </content>
+      </ScrollPane>
    </center>
 </BorderPane>

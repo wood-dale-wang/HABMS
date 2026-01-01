@@ -109,6 +109,7 @@ final class Service implements Runnable {
                 case "admin_update_schedule" -> handleAdminUpdateSchedule(data);
                 case "admin_all_appointments" -> handleAdminAllAppointments();
                 case "admin_report" -> handleAdminReport();
+                case "admin_add_doctors" -> handleAdminAddDoctors(data);
                 default -> err("unknown type: " + req.type);
             };
         } catch (Exception e) {
@@ -479,6 +480,51 @@ final class Service implements Runnable {
         return ok(report);
     }
 
+    private Response handleAdminAddDoctors(JsonNode data) throws Exception {
+        if (!isAdmin()) {
+            return err("not admin");
+        }
+        JsonNode doctorsNode = data.path("doctors");
+        if (!doctorsNode.isArray()) {
+            return err("doctors array required");
+        }
+
+        // First validate and prepare all doctor objects to avoid partial inserts on validation error
+        List<DoctorAccount> toCreate = new ArrayList<>();
+        for (JsonNode node : doctorsNode) {
+            String name = requiredText(node, "name");
+            String passwordHex = requiredText(node, "passwordHex");
+            boolean admin = optionalBool(node, "admin", false);
+            String department = requiredText(node, "department");
+            String describe = textOrNull(node, "describe");
+
+            if (!departments.isEmpty() && !departments.contains(department)) {
+                return err("department not exists");
+            }
+
+            toCreate.add(DoctorAccount.create(name, passwordHex, admin, department, describe == null ? "" : describe));
+        }
+
+        List<String> insertedDid = new ArrayList<>();
+        try {
+            for (DoctorAccount doctor : toCreate) {
+                db.InsertDoctorAccount(doctor);
+                insertedDid.add(doctor.getDid());
+            }
+            return ok(toCreate.stream().map(this::view).toList());
+        } catch (Exception e) {
+            // Roll back already-inserted doctors to avoid partial/broken import
+            for (String did : insertedDid) {
+                try {
+                    db.DelDoctorAccount(did);
+                } catch (Exception ignore) {
+                    // best-effort rollback
+                }
+            }
+            return err("admin_add_doctors failed, rolled back: " + e.getMessage());
+        }
+    }
+
     private boolean isLoggedIn() {
         return sessionAccount != null || sessionDoctor != null;
     }
@@ -522,6 +568,11 @@ final class Service implements Runnable {
     private int optionalInt(JsonNode node, String field, int def) {
         JsonNode child = node.path(field);
         return child.canConvertToInt() ? child.asInt() : def;
+    }
+
+    private boolean optionalBool(JsonNode node, String field, boolean def) {
+        JsonNode child = node.path(field);
+        return child.isBoolean() ? child.asBoolean() : def;
     }
 
     private Response ok(Object data) {
