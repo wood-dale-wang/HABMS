@@ -82,7 +82,8 @@ public class DoctorMainController {
         colAppId.setCellValueFactory(new PropertyValueFactory<>("apid"));
         colAppPid.setCellValueFactory(new PropertyValueFactory<>("aid")); // Assuming AID is patient ID
         colAppTime.setCellValueFactory(new PropertyValueFactory<>("startTime")); 
-        colAppStatus.setCellValueFactory(new PropertyValueFactory<>("statu"));
+        // Status field is exposed as getStatus() on Appointment
+        colAppStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
         // Profile
         profileDid.setText(doctor.getDid());
@@ -177,7 +178,10 @@ public class DoctorMainController {
                         resp.getData(), 
                         JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Appointment.class)
                     );
-                    appointmentTable.setItems(FXCollections.observableArrayList(list));
+                    List<Appointment> waiting = list.stream()
+                            .filter(a -> "Ok".equalsIgnoreCase(a.getStatus()))
+                            .toList();
+                    appointmentTable.setItems(FXCollections.observableArrayList(waiting));
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -193,6 +197,17 @@ public class DoctorMainController {
         Schedule selectedSchedule = workScheduleCombo.getSelectionModel().getSelectedItem();
         if (selectedSchedule == null) {
             showAlert("提示", "请先选择当前工作的排班");
+            return;
+        }
+
+        // Only proceed when there are waiting (status=Ok) appointments for this schedule
+        List<Appointment> waiting = appointmentTable.getItems().stream()
+                .filter(a -> a.getSid() == selectedSchedule.getSid())
+                .filter(a -> "Ok".equalsIgnoreCase(a.getStatus()))
+                .toList();
+        
+        if (waiting.isEmpty()) {
+            showAlert("提示", "当前排班无候诊患者");
             return;
         }
 
