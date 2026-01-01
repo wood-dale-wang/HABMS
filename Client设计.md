@@ -34,6 +34,21 @@ JavaFX 应用的启动入口。
     - 注销账号 (`account_delete`)
     - 退出登录 (`account_logout`)
 
+### DoctorMainController
+- **我的排班 Tab**：
+    - 查询当前医生的排班信息 (`schedule_by_doctor`)
+- **叫号诊疗 Tab**：
+    - 选择当前工作的排班
+    - 刷新候诊列表 (`doctor_appointments`)
+    - 呼叫下一位患者 (`doctor_call_next`)
+    - 完成诊疗
+- **医院管理 Tab** (仅管理员可见)：
+    - 批量导入数据 (Excel)
+    - 导出预约记录
+    - 生成统计报告
+- **个人信息 Tab**：
+    - 显示医生个人信息
+
 ## Model层
 
 ### 数据对象

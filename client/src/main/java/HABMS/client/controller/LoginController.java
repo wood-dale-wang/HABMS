@@ -2,6 +2,7 @@ package HABMS.client.controller;
 
 import HABMS.client.App;
 import HABMS.client.Session;
+import HABMS.client.model.Doctor;
 import HABMS.client.model.Request;
 import HABMS.client.model.Response;
 import HABMS.client.model.User;
@@ -99,9 +100,10 @@ public class LoginController {
                 try {
                     if ("doctor_login".equals(type)) {
                         // Doctor/Admin Login
-                        System.out.println("Doctor login success");
-                        // TODO: Store doctor in Session
-                        App.setRoot("view/admin_main", "飞马医院 - 管理端");
+                        Doctor doctor = JsonUtil.getMapper().convertValue(resp.getData(), Doctor.class);
+                        System.out.println("Doctor login success: " + doctor.getName());
+                        Session.setCurrentDoctor(doctor);
+                        App.setRoot("view/doctor_main", "飞马医院 - 医生/管理端");
                     } else {
                         // Patient Login
                         User user = JsonUtil.getMapper().convertValue(resp.getData(), User.class);
