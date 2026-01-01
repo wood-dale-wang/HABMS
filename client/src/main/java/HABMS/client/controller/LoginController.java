@@ -3,11 +3,13 @@ package HABMS.client.controller;
 import HABMS.client.App;
 import HABMS.client.Session;
 import HABMS.client.model.Doctor;
-import HABMS.client.model.Request;
 import HABMS.client.model.Response;
 import HABMS.client.model.User;
-import HABMS.client.net.NetworkClient;
+import HABMS.client.service.AuthService;
+import HABMS.client.service.LookupService;
 import HABMS.client.util.JsonUtil;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -15,23 +17,28 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 
 public class LoginController {
 
+    private final AuthService authService = new AuthService();
+    private final LookupService lookupService = new LookupService();
+
     @FXML private TextField pidField;
     @FXML private PasswordField passwordField;
     @FXML private Label errorLabel;
+    @FXML private Button loginButton;
+    @FXML private ProgressIndicator loginProgress;
     @FXML private RadioButton patientRadio;
     @FXML private RadioButton doctorRadio;
     @FXML private VBox patientLoginBox;
     @FXML private VBox doctorLoginBox;
     @FXML private TextField doctorNameField;
-    @FXML private TextField doctorDeptField;
+    @FXML private ComboBox<String> doctorDeptCombo;
     
     @FXML private TextField regNameField;
     @FXML private TextField regPidField;
@@ -39,12 +46,24 @@ public class LoginController {
     @FXML private PasswordField regPasswordField;
     @FXML private ComboBox<String> regSexCombo;
     @FXML private Label regErrorLabel;
+    @FXML private Button registerButton;
+    @FXML private ProgressIndicator registerProgress;
 
     @FXML
     public void initialize() {
         if (regSexCombo != null) {
             regSexCombo.getItems().addAll("M", "F");
             regSexCombo.getSelectionModel().selectFirst();
+        }
+
+        if (doctorDeptCombo != null) {
+            doctorDeptCombo.setItems(FXCollections.observableArrayList(Arrays.asList(
+                    "内科", "外科", "儿科", "妇产科", "口腔科", "眼科", "耳鼻喉科", "皮肤科", "急诊科", "体检中心", "管理"
+            )));
+            if (doctorDeptCombo.getValue() == null && !doctorDeptCombo.getItems().isEmpty()) {
+                doctorDeptCombo.getSelectionModel().selectFirst();
+            }
+            refreshDepartmentsSilently();
         }
 
         if (patientRadio != null && doctorRadio != null) {
@@ -55,6 +74,60 @@ public class LoginController {
             loginGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> updateLoginMode());
         }
         updateLoginMode();
+    }
+
+    private String getDoctorDepartment() {
+        if (doctorDeptCombo == null) {
+            return "";
+        }
+
+        String editorText = null;
+        if (doctorDeptCombo.isEditable() && doctorDeptCombo.getEditor() != null) {
+            editorText = doctorDeptCombo.getEditor().getText();
+        }
+        if (editorText != null && !editorText.trim().isEmpty()) {
+            return editorText.trim();
+        }
+
+        String value = doctorDeptCombo.getValue();
+        return value == null ? "" : value.trim();
+    }
+
+    private void refreshDepartmentsSilently() {
+        if (doctorDeptCombo == null) {
+            return;
+        }
+
+        String current = getDoctorDepartment();
+
+        Task<Response> task = lookupService.departmentList();
+        task.setOnSucceeded(e -> {
+            Response resp = task.getValue();
+            if (!resp.isOk()) {
+                return;
+            }
+            List<String> departments = JsonUtil.getMapper().convertValue(
+                    resp.getData(),
+                    JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, String.class));
+
+            Platform.runLater(() -> {
+                doctorDeptCombo.getItems().setAll(departments);
+                if (current != null && !current.isBlank()) {
+                    if (doctorDeptCombo.getItems().contains(current)) {
+                        doctorDeptCombo.getSelectionModel().select(current);
+                    } else if (doctorDeptCombo.isEditable() && doctorDeptCombo.getEditor() != null) {
+                        doctorDeptCombo.getEditor().setText(current);
+                    }
+                } else if (!doctorDeptCombo.getItems().isEmpty()) {
+                    doctorDeptCombo.getSelectionModel().selectFirst();
+                }
+            });
+        });
+        task.setOnFailed(e -> {
+            // ignore: server may reject department_list before login
+        });
+
+        lookupService.run(task);
     }
 
     private String hexSha256(String input) {
@@ -88,8 +161,77 @@ public class LoginController {
         }
     }
 
+    private void setLoginLoading(boolean loading) {
+        if (loginButton != null) {
+            loginButton.setDisable(loading);
+            loginButton.setOpacity(loading ? 0.75 : 1.0);
+        }
+        if (patientRadio != null) {
+            patientRadio.setDisable(loading);
+        }
+        if (doctorRadio != null) {
+            doctorRadio.setDisable(loading);
+        }
+        if (pidField != null) {
+            pidField.setDisable(loading);
+        }
+        if (doctorNameField != null) {
+            doctorNameField.setDisable(loading);
+        }
+        if (doctorDeptCombo != null) {
+            doctorDeptCombo.setDisable(loading);
+        }
+        if (passwordField != null) {
+            passwordField.setDisable(loading);
+        }
+        if (loginProgress != null) {
+            loginProgress.setVisible(loading);
+            loginProgress.setManaged(loading);
+        }
+    }
+
+    private void setRegisterLoading(boolean loading) {
+        if (registerButton != null) {
+            registerButton.setDisable(loading);
+            registerButton.setOpacity(loading ? 0.75 : 1.0);
+        }
+        if (regNameField != null) {
+            regNameField.setDisable(loading);
+        }
+        if (regPidField != null) {
+            regPidField.setDisable(loading);
+        }
+        if (regPhoneField != null) {
+            regPhoneField.setDisable(loading);
+        }
+        if (regPasswordField != null) {
+            regPasswordField.setDisable(loading);
+        }
+        if (regSexCombo != null) {
+            regSexCombo.setDisable(loading);
+        }
+        if (registerProgress != null) {
+            registerProgress.setVisible(loading);
+            registerProgress.setManaged(loading);
+        }
+    }
+
+    private void setRegisterStatus(boolean ok, String text) {
+        if (regErrorLabel == null) {
+            return;
+        }
+        regErrorLabel.setText(text);
+        regErrorLabel.getStyleClass().remove("error-label");
+        regErrorLabel.getStyleClass().remove("success-label");
+        regErrorLabel.getStyleClass().add(ok ? "success-label" : "error-label");
+    }
+
     @FXML
     private void handleLogin(ActionEvent event) {
+        setLoginLoading(false);
+        if (errorLabel != null) {
+            errorLabel.setText("");
+        }
         String password = passwordField.getText();
 
         if (password.isEmpty()) {
@@ -98,51 +240,36 @@ public class LoginController {
         }
 
         String passwordHex = hexSha256(password);
-        Map<String, String> data = new HashMap<>();
-        data.put("passwordHex", passwordHex);
 
-        String type;
         boolean doctorMode = doctorRadio != null && doctorRadio.isSelected();
+        final boolean isDoctorLogin = doctorMode;
+
+        Task<Response> task;
         if (doctorMode) {
             String doctorName = doctorNameField != null ? doctorNameField.getText().trim() : "";
-            String department = doctorDeptField != null ? doctorDeptField.getText().trim() : "";
+            String department = getDoctorDepartment();
             if (doctorName.isEmpty() || department.isEmpty()) {
                 errorLabel.setText("请输入医生姓名和科室");
                 return;
             }
-            type = "doctor_login";
-            data.put("name", doctorName);
-            data.put("department", department);
+            task = authService.loginDoctor(doctorName, department, passwordHex);
         } else {
-            String inputId = pidField.getText().trim();
+            String inputId = pidField != null ? pidField.getText().trim() : "";
             if (inputId.isEmpty()) {
                 errorLabel.setText("请输入身份证或手机号");
                 return;
             }
-            if (inputId.length() == 11) {
-                type = "account_login";
-                data.put("phone", inputId);
-            } else {
-                type = "account_login";
-                data.put("pid", inputId);
-            }
+            task = authService.loginAccount(inputId, passwordHex);
         }
 
-        Request req = new Request(type, data);
-
-        // Execute network request in background
-        Task<Response> task = new Task<>() {
-            @Override
-            protected Response call() throws Exception {
-                return NetworkClient.getInstance().sendRequest(req);
-            }
-        };
+        setLoginLoading(true);
 
         task.setOnSucceeded(e -> {
+            setLoginLoading(false);
             Response resp = task.getValue();
             if (resp.isOk()) {
                 try {
-                    if ("doctor_login".equals(type)) {
+                    if (isDoctorLogin) {
                         // Doctor/Admin Login
                         Doctor doctor = JsonUtil.getMapper().convertValue(resp.getData(), Doctor.class);
                         System.out.println("Doctor login success: " + doctor.getName());
@@ -168,46 +295,48 @@ public class LoginController {
         });
 
         task.setOnFailed(e -> {
+            setLoginLoading(false);
             errorLabel.setText("网络错误: " + e.getSource().getException().getMessage());
             e.getSource().getException().printStackTrace();
         });
 
-        new Thread(task).start();
+        authService.run(task);
     }
     
     @FXML
     private void handleRegister(ActionEvent event) {
-        Map<String, String> data = new HashMap<>();
-        data.put("name", regNameField.getText());
-        data.put("pid", regPidField.getText());
-        data.put("phone", regPhoneField.getText());
-        data.put("passwordHex", hexSha256(regPasswordField.getText()));
-        data.put("sex", regSexCombo.getValue());
-        
-        Request req = new Request("account_register", data);
-        
-        Task<Response> task = new Task<>() {
-            @Override
-            protected Response call() throws Exception {
-                return NetworkClient.getInstance().sendRequest(req);
-            }
-        };
-        
+        setRegisterLoading(false);
+        if (regErrorLabel != null) {
+            regErrorLabel.setText("");
+            regErrorLabel.getStyleClass().remove("error-label");
+            regErrorLabel.getStyleClass().remove("success-label");
+        }
+
+        String name = regNameField != null ? regNameField.getText() : "";
+        String pid = regPidField != null ? regPidField.getText() : "";
+        String phone = regPhoneField != null ? regPhoneField.getText() : "";
+        String passwordHex = hexSha256(regPasswordField != null ? regPasswordField.getText() : "");
+        String sex = regSexCombo != null ? regSexCombo.getValue() : null;
+
+        setRegisterLoading(true);
+
+        Task<Response> task = authService.registerAccount(name, pid, phone, passwordHex, sex);
+
         task.setOnSucceeded(e -> {
+            setRegisterLoading(false);
             Response resp = task.getValue();
             if (resp.isOk()) {
-                regErrorLabel.setStyle("-fx-text-fill: green;");
-                regErrorLabel.setText("注册成功！请切换到登录页登录。");
+                setRegisterStatus(true, "注册成功！请切换到登录页登录。");
             } else {
-                regErrorLabel.setStyle("-fx-text-fill: red;");
-                regErrorLabel.setText("注册失败: " + resp.getErrInfo());
+                setRegisterStatus(false, "注册失败: " + resp.getErrInfo());
             }
         });
-        
+
         task.setOnFailed(e -> {
-            regErrorLabel.setText("网络错误");
+            setRegisterLoading(false);
+            setRegisterStatus(false, "网络错误");
         });
-        
-        new Thread(task).start();
+
+        authService.run(task);
     }
 }
