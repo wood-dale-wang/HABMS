@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS Doctor (
     Password BINARY(64) NOT NULL,
     Admin BOOLEAN NOT NULL,
     Department VARCHAR(30) NOT NULL,
-    Description VARCHAR(200)
+    Description VARCHAR(200),
+    UNIQUE KEY uk_doctor_name_department (Name, Department)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS Schedule (

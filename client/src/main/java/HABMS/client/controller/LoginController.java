@@ -26,6 +26,12 @@ public class LoginController {
     @FXML private TextField pidField;
     @FXML private PasswordField passwordField;
     @FXML private Label errorLabel;
+    @FXML private RadioButton patientRadio;
+    @FXML private RadioButton doctorRadio;
+    @FXML private VBox patientLoginBox;
+    @FXML private VBox doctorLoginBox;
+    @FXML private TextField doctorNameField;
+    @FXML private TextField doctorDeptField;
     
     @FXML private TextField regNameField;
     @FXML private TextField regPidField;
@@ -40,6 +46,15 @@ public class LoginController {
             regSexCombo.getItems().addAll("M", "F");
             regSexCombo.getSelectionModel().selectFirst();
         }
+
+        if (patientRadio != null && doctorRadio != null) {
+            ToggleGroup loginGroup = new ToggleGroup();
+            patientRadio.setToggleGroup(loginGroup);
+            doctorRadio.setToggleGroup(loginGroup);
+            patientRadio.setSelected(true);
+            loginGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> updateLoginMode());
+        }
+        updateLoginMode();
     }
 
     private String hexSha256(String input) {
@@ -58,13 +73,27 @@ public class LoginController {
         }
     }
 
+    private void updateLoginMode() {
+        boolean doctorMode = doctorRadio != null && doctorRadio.isSelected();
+        if (patientLoginBox != null) {
+            patientLoginBox.setVisible(!doctorMode);
+            patientLoginBox.setManaged(!doctorMode);
+        }
+        if (doctorLoginBox != null) {
+            doctorLoginBox.setVisible(doctorMode);
+            doctorLoginBox.setManaged(doctorMode);
+        }
+        if (errorLabel != null) {
+            errorLabel.setText("");
+        }
+    }
+
     @FXML
     private void handleLogin(ActionEvent event) {
-        String inputId = pidField.getText().trim();
         String password = passwordField.getText();
 
-        if (inputId.isEmpty() || password.isEmpty()) {
-            errorLabel.setText("请输入账号和密码");
+        if (password.isEmpty()) {
+            errorLabel.setText("请输入密码");
             return;
         }
 
@@ -73,15 +102,30 @@ public class LoginController {
         data.put("passwordHex", passwordHex);
 
         String type;
-        if (inputId.length() == 8) {
+        boolean doctorMode = doctorRadio != null && doctorRadio.isSelected();
+        if (doctorMode) {
+            String doctorName = doctorNameField != null ? doctorNameField.getText().trim() : "";
+            String department = doctorDeptField != null ? doctorDeptField.getText().trim() : "";
+            if (doctorName.isEmpty() || department.isEmpty()) {
+                errorLabel.setText("请输入医生姓名和科室");
+                return;
+            }
             type = "doctor_login";
-            data.put("did", inputId);
-        } else if (inputId.length() == 11) {
-            type = "account_login";
-            data.put("phone", inputId);
+            data.put("name", doctorName);
+            data.put("department", department);
         } else {
-            type = "account_login";
-            data.put("pid", inputId);
+            String inputId = pidField.getText().trim();
+            if (inputId.isEmpty()) {
+                errorLabel.setText("请输入身份证或手机号");
+                return;
+            }
+            if (inputId.length() == 11) {
+                type = "account_login";
+                data.put("phone", inputId);
+            } else {
+                type = "account_login";
+                data.put("pid", inputId);
+            }
         }
 
         Request req = new Request(type, data);

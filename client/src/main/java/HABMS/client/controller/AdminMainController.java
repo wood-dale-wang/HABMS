@@ -284,15 +284,16 @@ public class AdminMainController {
 
     private Map<String, Object> parseScheduleLine(String line, int lineNo) throws IOException {
         String[] parts = line.split(",");
-        if (parts.length < 4) {
-            throw new IOException("排班第 " + lineNo + " 行字段不足");
+        if (parts.length < 5) {
+            throw new IOException("排班第 " + lineNo + " 行字段不足（需 name, department, startTime, endTime, capacity）");
         }
         Map<String, Object> schedule = new HashMap<>();
-        schedule.put("did", parts[0].trim());
-        schedule.put("startTime", parts[1].trim());
-        schedule.put("endTime", parts[2].trim());
+        schedule.put("name", parts[0].trim());
+        schedule.put("department", parts[1].trim());
+        schedule.put("startTime", parts[2].trim());
+        schedule.put("endTime", parts[3].trim());
         try {
-            schedule.put("capacity", Integer.parseInt(parts[3].trim()));
+            schedule.put("capacity", Integer.parseInt(parts[4].trim()));
         } catch (NumberFormatException ex) {
             throw new IOException("排班第 " + lineNo + " 行容量非数字");
         }
@@ -306,7 +307,7 @@ public class AdminMainController {
 
     private boolean looksLikeScheduleHeader(String line) {
         String lower = line.toLowerCase(Locale.ROOT);
-        return lower.contains("did") && lower.contains("start");
+        return lower.contains("name") && lower.contains("department");
     }
 
     private String sha256(String input) {

@@ -98,9 +98,9 @@ Service 以每行一个 JSON 消息进行通信。客户端发送形如：
 
 ### doctor_login
 
-- data：`did,passwordHex`
+- data：`name,department,passwordHex`
 - 返回：DoctorAccount（无 passwordHex）
-- 失败：未找到、密码错误
+- 失败：未找到（按 name+department）、密码错误
 
 ### doctor_logout
 
@@ -137,10 +137,10 @@ Service 以每行一个 JSON 消息进行通信。客户端发送形如：
 
 ### admin_add_schedules
 
-- data：`schedules` 数组，每项 `did,startTime,endTime,capacity`
-- 逻辑：检查与已存在及新建排班的时间重叠（同 did），通过后批量插入
+- data：`schedules` 数组，每项 `name,department,startTime,endTime,capacity`
+- 逻辑：按 `(name,department)` 查医生（需存在且唯一），检查与已存在及新建排班的时间重叠（同 did），通过后批量插入
 - 返回：新 Schedule 列表
-- 失败：未登录、非 admin、排班时间重叠、字段缺失
+- 失败：未登录、非 admin、医生不存在、排班时间重叠、字段缺失
 
 ### admin_update_schedule
 

@@ -311,9 +311,10 @@ final class Service implements Runnable {
     }
 
     private Response handleDoctorLogin(JsonNode data) throws Exception {
-        String did = requiredText(data, "did");
+        String name = requiredText(data, "name");
+        String department = requiredText(data, "department");
         String passwordHex = requiredText(data, "passwordHex");
-        DoctorAccount doctor = db.FindDoctorAccount(did, null);
+        DoctorAccount doctor = findDoctorByNameAndDepartment(name, department);
         if (doctor == null) {
             return err("doctor not found");
         }
@@ -380,14 +381,16 @@ final class Service implements Runnable {
         }
         List<Schedule> newSchedules = new ArrayList<>();
         for (JsonNode node : schedulesNode) {
-            String did = requiredText(node, "did");
-            if (db.FindDoctorAccount(did, null) == null) {
-                return err("did not exists");
+            String name = requiredText(node, "name");
+            String department = requiredText(node, "department");
+            DoctorAccount doctor = findDoctorByNameAndDepartment(name, department);
+            if (doctor == null) {
+                return err("doctor not exists");
             }
             LocalDateTime start = LocalDateTime.parse(requiredText(node, "startTime"));
             LocalDateTime end = LocalDateTime.parse(requiredText(node, "endTime"));
             int capacity = requiredInt(node, "capacity");
-            newSchedules.add(Schedule.create(did, start, end, capacity));
+            newSchedules.add(Schedule.create(doctor.getDid(), start, end, capacity));
         }
 
         // simple overlap check per doctor
@@ -534,6 +537,16 @@ final class Service implements Runnable {
 
     private boolean isAdmin() {
         return sessionDoctor != null && sessionDoctor.isAdmin();
+    }
+
+    private DoctorAccount findDoctorByNameAndDepartment(String name, String department) throws Exception {
+        DoctorAccount[] doctors = db.FindDoctorAccounts(department);
+        for (DoctorAccount doctor : doctors) {
+            if (doctor.getName().equals(name)) {
+                return doctor;
+            }
+        }
+        return null;
     }
 
     private Sex parseSex(JsonNode node) {
