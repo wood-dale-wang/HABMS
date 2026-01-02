@@ -44,6 +44,7 @@ public class LoginController {
     @FXML private TextField regNameField;
     @FXML private TextField regPidField;
     @FXML private TextField regPhoneField;
+    @FXML private TextField regAgeField;
     @FXML private PasswordField regPasswordField;
     @FXML private ComboBox<String> regSexCombo;
     @FXML private Label regErrorLabel;
@@ -210,6 +211,9 @@ public class LoginController {
         if (regPhoneField != null) {
             regPhoneField.setDisable(loading);
         }
+        if (regAgeField != null) {
+            regAgeField.setDisable(loading);
+        }
         if (regPasswordField != null) {
             regPasswordField.setDisable(loading);
         }
@@ -321,8 +325,25 @@ public class LoginController {
         String name = regNameField != null ? regNameField.getText() : "";
         String pid = regPidField != null ? regPidField.getText() : "";
         String phone = regPhoneField != null ? regPhoneField.getText() : "";
+        String ageText = regAgeField != null ? regAgeField.getText() : "";
         String passwordHex = hexSha256(regPasswordField != null ? regPasswordField.getText() : "");
         String sex = regSexCombo != null ? regSexCombo.getValue() : null;
+
+        if (ageText == null || ageText.trim().isEmpty()) {
+            setRegisterStatus(false, "请输入年龄");
+            return;
+        }
+        int age;
+        try {
+            age = Integer.parseInt(ageText.trim());
+        } catch (NumberFormatException ex) {
+            setRegisterStatus(false, "请输入有效的数字年龄");
+            return;
+        }
+        if (age <= 10) {
+            setRegisterStatus(false, "年龄需大于10岁");
+            return;
+        }
 
         setRegisterLoading(true);
 

@@ -76,19 +76,14 @@ HABMS/
 ### 1. 数据库配置
 
 1. 安装 MariaDB 数据库。
-2. 创建数据库用户 `rjava`，密码 `rjava`，并授予权限：
 
-    ```sql
-    CREATE USER 'rjava'@'%' IDENTIFIED BY 'rjava';
-    GRANT ALL PRIVILEGES ON *.* TO 'rjava'@'%';
-    FLUSH PRIVILEGES;
-    ```
-
-3. 运行初始化脚本：
+2. 运行初始化脚本：
     - 脚本路径：`server/src/main/resources/init_habms.sql`
-    - 该脚本会自动创建 `HABMSDB` 数据库及相关表结构，并插入默认管理员账号。
+    - 该脚本会自动创建`rjava`用户、 `HABMSDB` 数据库及相关表结构，并插入默认管理员账号。
 
 ### 2. 编译项目
+
+没有mvn环境可以将下面命令中的mvn换为./mvnw，记得加可执行权限
 
 在项目根目录下运行：
 
@@ -110,6 +105,8 @@ mvn clean compile exec:java -Dexec.mainClass=HABMS.server.ServerMain
 
 ### 4. 运行客户端
 
+将`client\src\main\java\HABMS\client\net\NetworkClient.java`中`SERVER_HOST = "localhost";`改为自己的服务器地址。
+
 进入 `client` 目录并启动应用：
 
 ```bash
@@ -117,7 +114,7 @@ cd client
 mvn clean javafx:run
 ```
 
-- 客户端启动后，可使用注册功能创建新账号，或使用管理员账号登录（需自行在数据库查看管理员账号，默认 `00000000`，密码admin）。
+- 客户端启动后，可使用注册功能创建新账号，或使用管理员账号登录（默认：管理，`Admin`，密码`admin`）。
 
 ## 开发文档
 
