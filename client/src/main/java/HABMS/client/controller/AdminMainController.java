@@ -253,7 +253,7 @@ public class AdminMainController {
                 }
                 doctor.put("department", department.getText().trim());
                 doctor.put("admin", isAdmin.isSelected());
-                doctor.put("describe", description.getText().trim());
+                doctor.put("description", description.getText().trim());
                 return doctor;
             }
             return null;
@@ -506,7 +506,7 @@ public class AdminMainController {
         String passwordPlain = parts[2].trim();
         String department = parts[3].trim();
         boolean admin = parts.length > 4 && Boolean.parseBoolean(parts[4].trim());
-        String describe = parts.length > 5 ? parts[5].trim() : "";
+        String description = parts.length > 5 ? parts[5].trim() : "";
 
         Map<String, Object> doctor = new HashMap<>();
         doctor.put("did", did);
@@ -516,8 +516,8 @@ public class AdminMainController {
         if (admin) {
             doctor.put("admin", true);
         }
-        if (!describe.isEmpty()) {
-            doctor.put("describe", describe);
+        if (!description.isEmpty()) {
+            doctor.put("description", description);
         }
         return doctor;
     }

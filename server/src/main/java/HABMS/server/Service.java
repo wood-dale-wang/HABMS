@@ -208,9 +208,9 @@ final class Service implements Runnable {
     }
 
     private Response handleDepartmentList() {
-        if (!isLoggedIn()) {
-            return err("not logged in");
-        }
+        // if (!isLoggedIn()) {
+        //     return err("not logged in");
+        // }
         return ok(new ArrayList<>(departments));
     }
 
@@ -510,7 +510,7 @@ final class Service implements Runnable {
             String passwordHex = textOrNull(node, "passwordHex");
             boolean admin = optionalBool(node, "admin", false);
             String department = requiredText(node, "department");
-            String describe = textOrNull(node, "describe");
+            String description = textOrNull(node, "description");
             String did = textOrNull(node, "did");
 
             if (!departments.isEmpty() && !departments.contains(department)) {
@@ -522,7 +522,7 @@ final class Service implements Runnable {
                 if (existing != null && existing.getDid().equals(did)) {
                     // Update existing
                     String newPass = (passwordHex != null && !passwordHex.isEmpty()) ? passwordHex : existing.getPasswordHex();
-                    DoctorAccount updated = new DoctorAccount(did, name, newPass, admin, department, describe == null ? "" : describe);
+                    DoctorAccount updated = new DoctorAccount(did, name, newPass, admin, department, description == null ? "" : description);
                     db.UpdateDoctorAccount(updated);
                     resultList.add(updated);
                 } else {
@@ -530,7 +530,7 @@ final class Service implements Runnable {
                     if (passwordHex == null || passwordHex.isEmpty()) {
                         return err("password required for new doctor");
                     }
-                    DoctorAccount newDoc = new DoctorAccount(did, name, passwordHex, admin, department, describe == null ? "" : describe);
+                    DoctorAccount newDoc = new DoctorAccount(did, name, passwordHex, admin, department, description == null ? "" : description);
                     db.InsertDoctorAccount(newDoc);
                     resultList.add(newDoc);
                 }
@@ -539,7 +539,7 @@ final class Service implements Runnable {
                 if (passwordHex == null || passwordHex.isEmpty()) {
                     return err("password required for new doctor");
                 }
-                DoctorAccount newDoc = DoctorAccount.create(name, passwordHex, admin, department, describe == null ? "" : describe);
+                DoctorAccount newDoc = DoctorAccount.create(name, passwordHex, admin, department, description == null ? "" : description);
                 db.InsertDoctorAccount(newDoc);
                 resultList.add(newDoc);
             }
