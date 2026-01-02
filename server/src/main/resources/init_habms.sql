@@ -1,8 +1,14 @@
-CREATE DATABASE HABMSDB;
+-- Create login if missing
+CREATE USER IF NOT EXISTS 'rjava'@'%' IDENTIFIED BY 'rjava';
+
+-- Create database if missing (only once)
+CREATE DATABASE IF NOT EXISTS HABMSDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Ensure the user has access
 GRANT ALL PRIVILEGES ON HABMSDB.* TO 'rjava'@'%';
 FLUSH PRIVILEGES;
 
-CREATE DATABASE IF NOT EXISTS HABMSDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Use the database (tables are created only when DB exists)
 USE HABMSDB;
 
 CREATE TABLE IF NOT EXISTS Account (
