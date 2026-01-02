@@ -110,6 +110,8 @@ final class Service implements Runnable {
                 case "admin_all_appointments" -> handleAdminAllAppointments();
                 case "admin_report" -> handleAdminReport();
                 case "admin_add_doctors" -> handleAdminAddDoctors(data);
+                case "admin_delete_doctor" -> handleAdminDeleteDoctor(data);
+                case "admin_delete_schedule" -> handleAdminDeleteSchedule(data);
                 default -> err("unknown type: " + req.type);
             };
         } catch (Exception e) {
@@ -223,11 +225,13 @@ final class Service implements Runnable {
         String department = textOrNull(data, "department");
 
         List<DoctorAccount> found = new ArrayList<>();
-        if (did != null || name != null) {
-            DoctorAccount doctor = db.FindDoctorAccount(did, name);
+        if (did != null) {
+            DoctorAccount doctor = db.FindDoctorAccount(did, null);
             if (doctor != null) {
                 found.add(doctor);
             }
+        } else if (name != null) {
+            found.addAll(Arrays.asList(db.FindDoctorAccountsByName(name)));
         } else if (department != null) {
             if (!departments.isEmpty() && !departments.contains(department)) {
                 return err("department not exists");
@@ -432,23 +436,49 @@ final class Service implements Runnable {
         if (existing == null) {
             return err("sid not exists");
         }
+        
         String did = textOrNull(data, "did");
-        String start = textOrNull(data, "startTime");
-        String end = textOrNull(data, "endTime");
-        if (did != null && !did.equals(existing.getDid())) {
-            return err("immutable did changed");
+        String startStr = textOrNull(data, "startTime");
+        String endStr = textOrNull(data, "endTime");
+        int capacity = optionalInt(data, "capacity", -1);
+        
+        String newDid = (did != null) ? did : existing.getDid();
+        LocalDateTime newStart = (startStr != null) ? LocalDateTime.parse(startStr) : existing.getStartTime();
+        LocalDateTime newEnd = (endStr != null) ? LocalDateTime.parse(endStr) : existing.getEndTime();
+        
+        int newCapacity = existing.getCapacity();
+        int newRes = existing.getRes();
+        
+        if (capacity != -1) {
+            int delta = capacity - existing.getCapacity();
+            newCapacity = capacity;
+            newRes = existing.getRes() + delta;
+            if (newRes < 0) {
+                 return err("capacity too small for existing reservations");
+            }
         }
-        if (start != null && !LocalDateTime.parse(start).equals(existing.getStartTime())) {
-            return err("immutable startTime changed");
-        }
-        if (end != null && !LocalDateTime.parse(end).equals(existing.getEndTime())) {
-            return err("immutable endTime changed");
-        }
-        int newCapacity = requiredInt(data, "capacity");
-        int delta = newCapacity - existing.getCapacity();
-        db.ChangeScheduleCapacity(sid, delta);
-        Schedule updated = new Schedule(existing.getSid(), existing.getDid(), existing.getStartTime(), existing.getEndTime(), existing.getCapacity() + delta, existing.getRes() + delta);
+
+        Schedule updated = new Schedule(sid, newDid, newStart, newEnd, newCapacity, newRes);
+        db.UpdateSchedule(updated);
         return ok(view(updated));
+    }
+
+    private Response handleAdminDeleteDoctor(JsonNode data) throws Exception {
+        if (!isAdmin()) {
+            return err("not admin");
+        }
+        String did = requiredText(data, "did");
+        db.DelDoctorAccount(did);
+        return ok(Map.of());
+    }
+
+    private Response handleAdminDeleteSchedule(JsonNode data) throws Exception {
+        if (!isAdmin()) {
+            return err("not admin");
+        }
+        int sid = requiredInt(data, "sid");
+        db.DelSchedule(sid);
+        return ok(Map.of());
     }
 
     private Response handleAdminAllAppointments() throws Exception {
@@ -654,6 +684,8 @@ final class Service implements Runnable {
         map.put("apid", appointment.getApid());
         map.put("aid", appointment.getAid());
         map.put("did", appointment.getDid());
+        map.put("doctorName", appointment.getDoctorName());
+        map.put("department", appointment.getDepartment());
         map.put("sid", appointment.getSid());
         map.put("status", appointment.getStatus().name());
         map.put("startTime", appointment.getStartTime());

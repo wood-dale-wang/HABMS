@@ -24,6 +24,7 @@ public class PatientMainController {
 
     // Booking Tab
     @FXML private ListView<String> departmentList;
+    @FXML private TextField searchDoctorField;
     @FXML private TableView<Doctor> doctorTable;
     @FXML private TableColumn<Doctor, String> docNameCol;
     @FXML private TableColumn<Doctor, String> docDeptCol;
@@ -40,6 +41,8 @@ public class PatientMainController {
     @FXML private TableView<Appointment> appointmentTable;
     @FXML private TableColumn<Appointment, String> apptIdCol;
     @FXML private TableColumn<Appointment, String> apptDocCol;
+    @FXML private TableColumn<Appointment, String> apptDocNameCol;
+    @FXML private TableColumn<Appointment, String> apptDeptCol;
     @FXML private TableColumn<Appointment, String> apptTimeCol;
     @FXML private TableColumn<Appointment, String> apptStatusCol;
     @FXML private Label apptStatusLabel;
@@ -89,7 +92,9 @@ public class PatientMainController {
 
     private void setupAppointmentsTab() {
         apptIdCol.setCellValueFactory(new PropertyValueFactory<>("apid"));
-        apptDocCol.setCellValueFactory(new PropertyValueFactory<>("did")); // Ideally show name
+        apptDocCol.setCellValueFactory(new PropertyValueFactory<>("did"));
+        apptDocNameCol.setCellValueFactory(new PropertyValueFactory<>("doctorName"));
+        apptDeptCol.setCellValueFactory(new PropertyValueFactory<>("department"));
         apptTimeCol.setCellValueFactory(new PropertyValueFactory<>("timeSlot"));
         apptStatusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
         
@@ -170,6 +175,40 @@ public class PatientMainController {
         if (selectedDoc != null) {
             loadSchedules(selectedDoc.getDid());
         }
+    }
+
+    @FXML
+    private void handleSearchDoctor(ActionEvent event) {
+        String name = searchDoctorField.getText().trim();
+        if (name.isEmpty()) {
+            // If empty, maybe reload based on selected department or clear?
+            // For now, let's just return or show all if department selected.
+            String selectedDept = departmentList.getSelectionModel().getSelectedItem();
+            if (selectedDept != null) {
+                loadDoctors(selectedDept);
+            }
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("name", name);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws Exception {
+                return NetworkClient.getInstance().sendRequest(new Request("doctor_query", data));
+            }
+        };
+        task.setOnSucceeded(e -> {
+            Response resp = task.getValue();
+            if (resp.isOk()) {
+                List<Doctor> docs = JsonUtil.getMapper().convertValue(resp.getData(), new TypeReference<List<Doctor>>() {});
+                doctorTable.setItems(FXCollections.observableArrayList(docs));
+            } else {
+                 // Handle error or empty
+                 doctorTable.setItems(FXCollections.observableArrayList());
+            }
+        });
+        new Thread(task).start();
     }
 
     @FXML

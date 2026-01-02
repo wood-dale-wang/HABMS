@@ -55,14 +55,20 @@
                                              <children>
                                                 <VBox prefHeight="266.0" prefWidth="691.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                    <children>
-                                                      <Label text="医生列表">
-                                                         <font>
-                                                            <Font name="System Bold" size="14.0" />
-                                                         </font>
+                                                      <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                                         <children>
+                                                            <Label text="医生列表">
+                                                               <font>
+                                                                  <Font name="System Bold" size="14.0" />
+                                                               </font>
+                                                            </Label>
+                                                            <TextField fx:id="searchDoctorField" promptText="输入医生姓名搜索" />
+                                                            <Button mnemonicParsing="false" onAction="#handleSearchDoctor" text="搜索" />
+                                                         </children>
                                                          <VBox.margin>
                                                             <Insets bottom="5.0" left="10.0" top="10.0" />
                                                          </VBox.margin>
-                                                      </Label>
+                                                      </HBox>
                                                       <TableView fx:id="doctorTable" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                                         <columns>
                                                           <TableColumn fx:id="docNameCol" prefWidth="100.0" text="姓名" />
@@ -137,7 +143,9 @@
                               <TableView fx:id="appointmentTable" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                 <columns>
                                   <TableColumn fx:id="apptIdCol" prefWidth="100.0" text="预约号" />
-                                  <TableColumn fx:id="apptDocCol" prefWidth="100.0" text="医生" />
+                                  <TableColumn fx:id="apptDocCol" prefWidth="100.0" text="医生ID" />
+                                  <TableColumn fx:id="apptDocNameCol" prefWidth="100.0" text="医生姓名" />
+                                  <TableColumn fx:id="apptDeptCol" prefWidth="100.0" text="科室" />
                                     <TableColumn fx:id="apptTimeCol" prefWidth="200.0" text="预约时间" />
                                     <TableColumn fx:id="apptStatusCol" prefWidth="100.0" text="状态" />
                                 </columns>

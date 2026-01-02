@@ -12,6 +12,7 @@ public class Appointment {
     
     // Extra fields for display
     private String doctorName;
+    private String department;
 
     public String getSerialNumber() { return serialNumber; }
     public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
@@ -39,6 +40,9 @@ public class Appointment {
     
     public String getDoctorName() { return doctorName; }
     public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
+    
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
     
     public String getTimeSlot() {
         if (startTime == null) return "";
