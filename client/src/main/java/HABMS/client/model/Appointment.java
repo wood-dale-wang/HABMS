@@ -46,6 +46,24 @@ public class Appointment {
     
     public String getTimeSlot() {
         if (startTime == null) return "";
-        return startTime.replace("T", " ") + " - " + (endTime != null ? endTime.substring(11) : "");
+        // Format: yyyy-MM-dd HH:mm - HH:mm
+        String start = startTime.replace("T", " ");
+        if (start.length() > 16) start = start.substring(0, 16);
+        
+        String end = "";
+        if (endTime != null && endTime.length() > 16) {
+            end = endTime.substring(11, 16);
+        }
+        return start + " - " + end;
+    }
+
+    public String getStatusDisplay() {
+        if (status == null) return "";
+        switch (status) {
+            case "Ok": return "已预约";
+            case "Abandon": return "已取消";
+            case "Done": return "已完成";
+            default: return status;
+        }
     }
 }

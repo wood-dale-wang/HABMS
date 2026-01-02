@@ -40,6 +40,7 @@ public class PatientMainController {
     // My Appointments Tab
     @FXML private TableView<Appointment> appointmentTable;
     @FXML private TableColumn<Appointment, String> apptIdCol;
+    @FXML private TableColumn<Appointment, String> apptAidCol;
     @FXML private TableColumn<Appointment, String> apptDocCol;
     @FXML private TableColumn<Appointment, String> apptDocNameCol;
     @FXML private TableColumn<Appointment, String> apptDeptCol;
@@ -92,11 +93,12 @@ public class PatientMainController {
 
     private void setupAppointmentsTab() {
         apptIdCol.setCellValueFactory(new PropertyValueFactory<>("apid"));
+        apptAidCol.setCellValueFactory(new PropertyValueFactory<>("aid"));
         apptDocCol.setCellValueFactory(new PropertyValueFactory<>("did"));
         apptDocNameCol.setCellValueFactory(new PropertyValueFactory<>("doctorName"));
         apptDeptCol.setCellValueFactory(new PropertyValueFactory<>("department"));
         apptTimeCol.setCellValueFactory(new PropertyValueFactory<>("timeSlot"));
-        apptStatusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        apptStatusCol.setCellValueFactory(new PropertyValueFactory<>("statusDisplay"));
         
         handleRefreshAppointments(null);
     }

@@ -19,7 +19,10 @@ final class IdGenerator {
     }
 
     static String newApid() {
-        return formatNumeric(12);
+        // 12 digits: yyMMdd (6) + random (6)
+        String datePart = java.time.format.DateTimeFormatter.ofPattern("yyMMdd").format(LocalDate.now());
+        long randomPart = Math.abs(RANDOM.nextLong()) % 1_000_000L;
+        return datePart + String.format("%06d", randomPart);
     }
 
     static int newSid() {

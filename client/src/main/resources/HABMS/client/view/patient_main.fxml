@@ -143,6 +143,7 @@
                               <TableView fx:id="appointmentTable" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                 <columns>
                                   <TableColumn fx:id="apptIdCol" prefWidth="100.0" text="预约号" />
+                                  <TableColumn fx:id="apptAidCol" prefWidth="100.0" text="患者ID" />
                                   <TableColumn fx:id="apptDocCol" prefWidth="100.0" text="医生ID" />
                                   <TableColumn fx:id="apptDocNameCol" prefWidth="100.0" text="医生姓名" />
                                   <TableColumn fx:id="apptDeptCol" prefWidth="100.0" text="科室" />
