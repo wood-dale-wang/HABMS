@@ -40,6 +40,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+
 public class AdminMainController {
 
     @FXML private Label doctorFileLabel;
@@ -56,11 +62,14 @@ public class AdminMainController {
     @FXML private Button refreshDoctorBtn;
 
     private final FileChooser csvChooser = new FileChooser();
+    private final DataFormatter dataFormatter = new DataFormatter();
 
     @FXML
     public void initialize() {
         csvChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("CSV / TXT", "*.csv", "*.txt"));
+        csvChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Excel (xls/xlsx)", "*.xls", "*.xlsx"));
 
         if (doctorTable != null) {
             colDid.setCellValueFactory(new PropertyValueFactory<>("did"));
@@ -145,7 +154,7 @@ public class AdminMainController {
         Task<Response> task = new Task<>() {
             @Override
             protected Response call() throws Exception {
-                List<Map<String, Object>> doctors = parseDoctorCsv(file);
+                List<Map<String, Object>> doctors = parseDoctorFile(file);
                 Map<String, Object> data = new HashMap<>();
                 data.put("doctors", doctors);
                 return NetworkClient.getInstance().sendRequest(new Request("admin_add_doctors", data));
@@ -410,7 +419,7 @@ public class AdminMainController {
         Task<Response> task = new Task<>() {
             @Override
             protected Response call() throws Exception {
-                List<Map<String, Object>> schedules = parseScheduleCsv(file);
+                List<Map<String, Object>> schedules = parseScheduleFile(file);
                 Map<String, Object> data = new HashMap<>();
                 data.put("schedules", schedules);
                 return NetworkClient.getInstance().sendRequest(new Request("admin_add_schedules", data));
@@ -444,6 +453,28 @@ public class AdminMainController {
         App.setRoot("view/login", "飞马星球医院预约挂号系统");
     }
 
+    private List<Map<String, Object>> parseDoctorFile(File file) throws IOException {
+        String name = file.getName().toLowerCase(Locale.ROOT);
+        if (name.endsWith(".csv") || name.endsWith(".txt")) {
+            return parseDoctorCsv(file);
+        }
+        if (name.endsWith(".xls") || name.endsWith(".xlsx")) {
+            return parseDoctorExcel(file);
+        }
+        throw new IOException("仅支持 csv/txt/xls/xlsx 文件");
+    }
+
+    private List<Map<String, Object>> parseScheduleFile(File file) throws IOException {
+        String name = file.getName().toLowerCase(Locale.ROOT);
+        if (name.endsWith(".csv") || name.endsWith(".txt")) {
+            return parseScheduleCsv(file);
+        }
+        if (name.endsWith(".xls") || name.endsWith(".xlsx")) {
+            return parseScheduleExcel(file);
+        }
+        throw new IOException("仅支持 csv/txt/xls/xlsx 文件");
+    }
+
     private List<Map<String, Object>> parseDoctorCsv(File file) throws IOException {
         List<Map<String, Object>> doctors = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(
@@ -466,6 +497,51 @@ public class AdminMainController {
                 }
                 doctors.add(parseDoctorLine(line, lineNo));
             }
+        }
+        return doctors;
+    }
+
+    private List<Map<String, Object>> parseDoctorExcel(File file) throws IOException {
+        List<Map<String, Object>> doctors = new ArrayList<>();
+        try (FileInputStream fis = new FileInputStream(file); Workbook workbook = WorkbookFactory.create(fis)) {
+            Sheet sheet = workbook.getNumberOfSheets() > 0 ? workbook.getSheetAt(0) : null;
+            if (sheet == null) {
+                throw new IOException("文件为空");
+            }
+
+            var rows = sheet.rowIterator();
+            Row first = null;
+            int lineNo = 0;
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                lineNo = row.getRowNum() + 1;
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+                first = row;
+                break;
+            }
+            if (first == null) {
+                throw new IOException("文件为空");
+            }
+
+            boolean hasHeader = looksLikeDoctorHeader(rowToHeaderString(first));
+            if (!hasHeader) {
+                doctors.add(parseDoctorRow(first, lineNo));
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                lineNo = row.getRowNum() + 1;
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+                doctors.add(parseDoctorRow(row, lineNo));
+            }
+        } catch (IOException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IOException("读取 Excel 失败: " + ex.getMessage(), ex);
         }
         return doctors;
     }
@@ -496,6 +572,51 @@ public class AdminMainController {
         return schedules;
     }
 
+    private List<Map<String, Object>> parseScheduleExcel(File file) throws IOException {
+        List<Map<String, Object>> schedules = new ArrayList<>();
+        try (FileInputStream fis = new FileInputStream(file); Workbook workbook = WorkbookFactory.create(fis)) {
+            Sheet sheet = workbook.getNumberOfSheets() > 0 ? workbook.getSheetAt(0) : null;
+            if (sheet == null) {
+                throw new IOException("文件为空");
+            }
+
+            var rows = sheet.rowIterator();
+            Row first = null;
+            int lineNo = 0;
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                lineNo = row.getRowNum() + 1;
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+                first = row;
+                break;
+            }
+            if (first == null) {
+                throw new IOException("文件为空");
+            }
+
+            boolean hasHeader = looksLikeScheduleHeader(rowToHeaderString(first));
+            if (!hasHeader) {
+                schedules.add(parseScheduleRow(first, lineNo));
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                lineNo = row.getRowNum() + 1;
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+                schedules.add(parseScheduleRow(row, lineNo));
+            }
+        } catch (IOException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IOException("读取 Excel 失败: " + ex.getMessage(), ex);
+        }
+        return schedules;
+    }
+
     private Map<String, Object> parseDoctorLine(String line, int lineNo) throws IOException {
         String[] parts = line.split(",");
         if (parts.length < 4) {
@@ -522,6 +643,32 @@ public class AdminMainController {
         return doctor;
     }
 
+    private Map<String, Object> parseDoctorRow(Row row, int lineNo) throws IOException {
+        String did = getCell(row, 0);
+        String name = getCell(row, 1);
+        String passwordPlain = getCell(row, 2);
+        String department = getCell(row, 3);
+        String adminStr = getCell(row, 4);
+        String description = getCell(row, 5);
+
+        if (did.isEmpty() || name.isEmpty() || passwordPlain.isEmpty() || department.isEmpty()) {
+            throw new IOException("医生账户第 " + lineNo + " 行字段不足");
+        }
+
+        Map<String, Object> doctor = new HashMap<>();
+        doctor.put("did", did);
+        doctor.put("name", name);
+        doctor.put("passwordHex", sha256(passwordPlain));
+        doctor.put("department", department);
+        if (!adminStr.isEmpty() && Boolean.parseBoolean(adminStr)) {
+            doctor.put("admin", true);
+        }
+        if (!description.isEmpty()) {
+            doctor.put("description", description);
+        }
+        return doctor;
+    }
+
     private Map<String, Object> parseScheduleLine(String line, int lineNo) throws IOException {
         String[] parts = line.split(",");
         if (parts.length < 6) {
@@ -539,6 +686,66 @@ public class AdminMainController {
             throw new IOException("排班第 " + lineNo + " 行容量非数字");
         }
         return schedule;
+    }
+
+    private Map<String, Object> parseScheduleRow(Row row, int lineNo) throws IOException {
+        String did = getCell(row, 0);
+        String name = getCell(row, 1);
+        String department = getCell(row, 2);
+        String startTime = getCell(row, 3);
+        String endTime = getCell(row, 4);
+        String capacityStr = getCell(row, 5);
+
+        if (did.isEmpty() || name.isEmpty() || department.isEmpty() || startTime.isEmpty() || endTime.isEmpty() || capacityStr.isEmpty()) {
+            throw new IOException("排班第 " + lineNo + " 行字段不足（需 did, name, department, startTime, endTime, capacity）");
+        }
+
+        Map<String, Object> schedule = new HashMap<>();
+        schedule.put("did", did);
+        schedule.put("name", name);
+        schedule.put("department", department);
+        schedule.put("startTime", startTime);
+        schedule.put("endTime", endTime);
+        try {
+            schedule.put("capacity", Integer.parseInt(capacityStr));
+        } catch (NumberFormatException ex) {
+            throw new IOException("排班第 " + lineNo + " 行容量非数字");
+        }
+        return schedule;
+    }
+
+    private boolean isRowEmpty(Row row) {
+        if (row == null || row.getLastCellNum() <= 0) {
+            return true;
+        }
+        int last = row.getLastCellNum();
+        for (int i = 0; i < last; i++) {
+            String value = getCell(row, i).trim();
+            if (!value.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String rowToHeaderString(Row row) {
+        StringBuilder sb = new StringBuilder();
+        int last = row.getLastCellNum();
+        for (int i = 0; i < last; i++) {
+            String value = getCell(row, i).trim();
+            if (value.isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            sb.append(value);
+        }
+        return sb.toString();
+    }
+
+    private String getCell(Row row, int index) {
+        return dataFormatter.formatCellValue(row.getCell(index));
     }
 
     private boolean looksLikeDoctorHeader(String line) {
