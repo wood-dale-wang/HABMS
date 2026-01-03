@@ -24,6 +24,9 @@ import java.util.List;
 import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * 登录/注册页控制器：处理患者与医生登录、注册，以及科室列表拉取。
+ */
 public class LoginController {
 
     private final AuthService authService = new AuthService();
@@ -95,6 +98,7 @@ public class LoginController {
         return value == null ? "" : value.trim();
     }
 
+    /** 拉取科室列表用于医生登录页，失败时静默忽略。 */
     private void refreshDepartmentsSilently() {
         if (doctorDeptCombo == null) {
             return;
@@ -137,6 +141,7 @@ public class LoginController {
         lookupService.run(task);
     }
 
+    /** 对密码做 SHA-256 单向散列以避免明文传输。 */
     private String hexSha256(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -153,6 +158,7 @@ public class LoginController {
         }
     }
 
+    /** 根据选中角色切换医生/患者登录框显示。 */
     private void updateLoginMode() {
         boolean doctorMode = doctorRadio != null && doctorRadio.isSelected();
         if (patientLoginBox != null) {
@@ -168,6 +174,7 @@ public class LoginController {
         }
     }
 
+    /** 切换登录按钮与输入框的加载状态。 */
     private void setLoginLoading(boolean loading) {
         if (loginButton != null) {
             loginButton.setDisable(loading);
@@ -197,6 +204,7 @@ public class LoginController {
         }
     }
 
+    /** 切换注册按钮与输入框的加载状态。 */
     private void setRegisterLoading(boolean loading) {
         if (registerButton != null) {
             registerButton.setDisable(loading);
@@ -226,6 +234,7 @@ public class LoginController {
         }
     }
 
+    /** 在注册区域显示成功/失败状态文案。 */
     private void setRegisterStatus(boolean ok, String text) {
         if (regErrorLabel == null) {
             return;
@@ -236,6 +245,7 @@ public class LoginController {
         regErrorLabel.getStyleClass().add(ok ? "success-label" : "error-label");
     }
 
+    /** 登录患者或医生，成功后跳转对应主界面。 */
     @FXML
     private void handleLogin(ActionEvent event) {
         setLoginLoading(false);
@@ -313,6 +323,7 @@ public class LoginController {
         authService.run(task);
     }
     
+    /** 提交患者注册信息并提示结果。 */
     @FXML
     private void handleRegister(ActionEvent event) {
         setRegisterLoading(false);

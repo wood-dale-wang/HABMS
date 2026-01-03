@@ -9,7 +9,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 /**
- * JavaFX App
+ * JavaFX 启动类：创建主舞台并加载首个登录界面。
  */
 public class App extends Application {
 
@@ -26,15 +26,18 @@ public class App extends Application {
         stage.show();
     }
 
+    /** 切换到指定 FXML 视图，不修改窗口标题。 */
     public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
     }
 
+    /** 切换到指定 FXML 视图，同时更新窗口标题。 */
     public static void setRoot(String fxml, String title) throws IOException {
         primaryStage.setTitle(title);
         scene.setRoot(loadFXML(fxml));
     }
 
+    /** 按名称加载位于 resources/HABMS/client 下的 FXML。 */
     private static Parent loadFXML(String fxml) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
         return fxmlLoader.load();

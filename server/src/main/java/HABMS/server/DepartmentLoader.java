@@ -11,13 +11,14 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** Loads department list from a JSON array file. */
+/** 从 JSON 数组文件加载科室列表，忽略空值并给出日志。 */
 final class DepartmentLoader {
     private static final Logger LOG = Logger.getLogger(DepartmentLoader.class.getName());
 
     private DepartmentLoader() {
     }
 
+    /** 读取科室文件；缺失或错误时返回空列表。 */
     static List<String> load(Path path) {
         if (!Files.exists(path)) {
             LOG.warning(() -> "department.json not found at " + path.toAbsolutePath());

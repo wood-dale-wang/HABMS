@@ -12,6 +12,9 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 
+/**
+ * TCP 客户端单例：维护与服务器的长连接并以 JSON 行协议收发。
+ */
 public class NetworkClient {
     private static NetworkClient instance;
     private Socket socket;
@@ -29,6 +32,7 @@ public class NetworkClient {
         return instance;
     }
 
+    /** 建立到服务器的 socket 连接。 */
     public void connect() throws IOException {
         if (socket == null || socket.isClosed()) {
             Socket s = new Socket(Proxy.NO_PROXY);
@@ -39,6 +43,7 @@ public class NetworkClient {
         }
     }
 
+    /** 序列化请求，发送后读取单行响应并反序列化。 */
     public Response sendRequest(Request request) throws IOException {
         // Ensure connection
         // connect(); // In a real app, you might want to manage connection lifecycle better
@@ -64,6 +69,7 @@ public class NetworkClient {
         return JsonUtil.fromJson(jsonResp, Response.class);
     }
     
+    /** 关闭底层 socket。 */
     public void close() {
         try {
             if (socket != null) socket.close();

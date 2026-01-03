@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** Simple TCP server that accepts a socket per client and delegates to {@link Service}. */
+/** 简易 TCP 服务器：接受客户端连接并为每个连接分配一个 Service 处理。 */
 final class ServerRuntime {
     private static final Logger LOG = Logger.getLogger(ServerRuntime.class.getName());
 
@@ -35,6 +35,7 @@ final class ServerRuntime {
         this.departments = List.copyOf(departments);
     }
 
+    /** 启动监听循环，接收新连接并交给线程池。 */
     void start() throws IOException {
         if (!running.compareAndSet(false, true)) {
             return;
@@ -54,6 +55,7 @@ final class ServerRuntime {
         }
     }
 
+    /** 停止监听并关闭线程池。 */
     void stop() {
         if (!running.compareAndSet(true, false)) {
             return;

@@ -35,7 +35,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** One Service per TCP connection. Messages are JSON per line: {"type":"...","data":{...}}. */
+/**
+ * 单连接请求分发器：逐行读取 JSON 请求并按 type 路由，执行业务后返回 JSON 响应。
+ */
 final class Service implements Runnable {
     private static final Logger LOG = Logger.getLogger(Service.class.getName());
 
@@ -56,6 +58,7 @@ final class Service implements Runnable {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
+    /** 循环读取客户端行，处理并写回响应。 */
     @Override
     public void run() {
         try (socket;
@@ -80,6 +83,7 @@ final class Service implements Runnable {
         }
     }
 
+    /** 解析一行请求并分派到对应处理方法，异常时返回错误响应。 */
     private Response handleLine(String line) {
         try {
             Request req = mapper.readValue(line, Request.class);
@@ -120,6 +124,7 @@ final class Service implements Runnable {
         }
     }
 
+    /** 患者注册：校验唯一性，创建账户并建立会话。 */
     private Response handleAccountRegister(JsonNode data) throws Exception {
         String name = requiredText(data, "name");
         String passwordHex = requiredText(data, "passwordHex");
@@ -141,6 +146,7 @@ final class Service implements Runnable {
         return ok(view(account));
     }
 
+    /** 患者登录：按 PID/手机号查找并校验密码。 */
     private Response handleAccountLogin(JsonNode data) throws Exception {
         String pid = textOrNull(data, "pid");
         String phone = textOrNull(data, "phone");
@@ -160,6 +166,7 @@ final class Service implements Runnable {
         return ok(view(account));
     }
 
+    /** 患者登出，校验 AID 匹配。 */
     private Response handleAccountLogout(JsonNode data) {
         if (sessionAccount == null) {
             return err("not logged in");
@@ -172,6 +179,7 @@ final class Service implements Runnable {
         return ok(Map.of());
     }
 
+    /** 患者注销账号并清理会话。 */
     private Response handleAccountDelete(JsonNode data) throws Exception {
         if (sessionAccount == null) {
             return err("not logged in");
@@ -185,6 +193,7 @@ final class Service implements Runnable {
         return ok(Map.of());
     }
 
+    /** 患者信息更新，禁止修改 PID/Phone。 */
     private Response handleAccountUpdate(JsonNode data) throws Exception {
         if (sessionAccount == null) {
             return err("not logged in");
@@ -209,6 +218,7 @@ final class Service implements Runnable {
         return ok(view(updated));
     }
 
+    /** 返回科室列表（当前允许未登录访问）。 */
     private Response handleDepartmentList() {
         // if (!isLoggedIn()) {
         //     return err("not logged in");
@@ -216,6 +226,7 @@ final class Service implements Runnable {
         return ok(new ArrayList<>(departments));
     }
 
+    /** 按 did/name/department 查询医生（需登录）。 */
     private Response handleDoctorQuery(JsonNode data) throws Exception {
         if (!isLoggedIn()) {
             return err("not logged in");
@@ -244,6 +255,7 @@ final class Service implements Runnable {
         return ok(found.stream().map(this::view).toList());
     }
 
+    /** 查询指定医生的排班（需登录）。 */
     private Response handleScheduleByDoctor(JsonNode data) throws Exception {
         if (!isLoggedIn()) {
             return err("not logged in");
@@ -253,6 +265,7 @@ final class Service implements Runnable {
         return ok(Arrays.stream(schedules).map(this::view).toList());
     }
 
+    /** 按时间与科室查询可用排班。 */
     private Response handleScheduleByTime(JsonNode data) throws Exception {
         if (!isLoggedIn()) {
             return err("not logged in");
@@ -267,6 +280,7 @@ final class Service implements Runnable {
         return ok(Arrays.stream(schedules).map(this::view).toList());
     }
 
+    /** 患者创建预约，原子扣减号源并返回预约。 */
     private Response handleAppointmentCreate(JsonNode data) throws Exception {
         if (sessionAccount == null) {
             return err("not logged in");
@@ -289,6 +303,7 @@ final class Service implements Runnable {
         return ok(view(appointment));
     }
 
+    /** 患者取消预约，必要时返还号源。 */
     private Response handleAppointmentCancel(JsonNode data) throws Exception {
         if (sessionAccount == null) {
             return err("not logged in");
@@ -306,6 +321,7 @@ final class Service implements Runnable {
         return ok(view(updated));
     }
 
+    /** 获取当前患者的全部预约。 */
     private Response handleAppointmentList() throws Exception {
         if (sessionAccount == null) {
             return err("not logged in");
@@ -314,6 +330,7 @@ final class Service implements Runnable {
         return ok(Arrays.stream(appointments).map(this::view).toList());
     }
 
+    /** 医生/管理员登录。 */
     private Response handleDoctorLogin(JsonNode data) throws Exception {
         String name = requiredText(data, "name");
         String department = requiredText(data, "department");
@@ -330,6 +347,7 @@ final class Service implements Runnable {
         return ok(view(doctor));
     }
 
+    /** 医生登出。 */
     private Response handleDoctorLogout() {
         if (sessionDoctor == null) {
             return err("not logged in");
@@ -338,6 +356,7 @@ final class Service implements Runnable {
         return ok(Map.of());
     }
 
+    /** 医生查看自己的排班。 */
     private Response handleDoctorSchedules() throws Exception {
         if (sessionDoctor == null) {
             return err("not logged in");
@@ -346,6 +365,7 @@ final class Service implements Runnable {
         return ok(Arrays.stream(schedules).map(this::view).toList());
     }
 
+    /** 医生查看自己的预约列表。 */
     private Response handleDoctorAppointments() throws Exception {
         if (sessionDoctor == null) {
             return err("not logged in");
@@ -354,6 +374,7 @@ final class Service implements Runnable {
         return ok(Arrays.stream(appointments).map(this::view).toList());
     }
 
+    /** 医生按排班叫号下一位候诊预约并置为 Done。 */
     private Response handleDoctorCallNext(JsonNode data) throws Exception {
         if (sessionDoctor == null) {
             return err("not logged in");
@@ -375,6 +396,7 @@ final class Service implements Runnable {
         return ok(view(updated));
     }
 
+    /** 管理员批量导入排班，按医生姓名或 DID 匹配。 */
     private Response handleAdminAddSchedules(JsonNode data) throws Exception {
         if (!isAdmin()) {
             return err("not admin");

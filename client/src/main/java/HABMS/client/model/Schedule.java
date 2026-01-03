@@ -1,5 +1,8 @@
 package HABMS.client.model;
 
+/**
+ * 排班视图模型，包含剩余号源与时间段信息。
+ */
 public class Schedule {
     private int sid;
     private String did;

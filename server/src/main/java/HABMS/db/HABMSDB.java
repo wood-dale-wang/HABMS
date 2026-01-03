@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/** 主数据库逻辑对象 */
+/** 主数据库逻辑对象：封装 JDBC CRUD 与核心业务事务。 */
 public class HABMSDB {
     private final String url;
     private final String user;
@@ -28,6 +28,7 @@ public class HABMSDB {
     }
 
     // insert
+    /** 新增患者账户。 */
     public void InsertAccount(Account account) throws SQLException {
         String sql = "INSERT INTO Account(AID,Name,Password,PID,Phone,Sex) VALUES (?,?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -41,6 +42,7 @@ public class HABMSDB {
         }
     }
 
+    /** 新增医生账户。 */
     public void InsertDoctorAccount(DoctorAccount doctor) throws SQLException {
         String sql = "INSERT INTO Doctor(DID,Name,Password,Admin,Department,Description) VALUES (?,?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -54,6 +56,7 @@ public class HABMSDB {
         }
     }
 
+    /** 覆盖更新医生信息。 */
     public void UpdateDoctorAccount(DoctorAccount doctor) throws SQLException {
         String sql = "UPDATE Doctor SET Name=?, Password=?, Admin=?, Department=?, Description=? WHERE DID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -67,6 +70,7 @@ public class HABMSDB {
         }
     }
 
+    /** 覆盖更新排班信息。 */
     public void UpdateSchedule(Schedule schedule) throws SQLException {
         String sql = "UPDATE Schedule SET DID=?, STime=?, ETime=?, Capacity=?, Res=? WHERE SID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -80,6 +84,7 @@ public class HABMSDB {
         }
     }
 
+    /** 插入预约记录（无并发控制，供管理用）。 */
     public void InsertAppointment(Appointment appointment) throws SQLException {
         String sql = "INSERT INTO Appointment(APID,AID,DID,SID,Statu) VALUES (?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -92,6 +97,7 @@ public class HABMSDB {
         }
     }
 
+    /** 插入单条排班。 */
     public void InsertSchedule(Schedule schedule) throws SQLException {
         String sql = "INSERT INTO Schedule(SID,DID,STime,ETime,Capacity,Res) VALUES (?,?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -105,6 +111,7 @@ public class HABMSDB {
         }
     }
 
+    /** 批量插入排班列表。 */
     public void InsertSchedules(List<Schedule> schedules) throws SQLException {
         String sql = "INSERT INTO Schedule(SID,DID,STime,ETime,Capacity,Res) VALUES (?,?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -122,18 +129,22 @@ public class HABMSDB {
     }
 
     // delete
+    /** 删除患者账号。 */
     public void DelAccount(String aid) throws SQLException {
         executeDelete("DELETE FROM Account WHERE AID=?", aid);
     }
 
+    /** 删除医生账号。 */
     public void DelDoctorAccount(String did) throws SQLException {
         executeDelete("DELETE FROM Doctor WHERE DID=?", did);
     }
 
+    /** 删除预约记录。 */
     public void DelAppointment(String apid) throws SQLException {
         executeDelete("DELETE FROM Appointment WHERE APID=?", apid);
     }
 
+    /** 删除排班。 */
     public void DelSchedule(int sid) throws SQLException {
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM Schedule WHERE SID=?")) {
             ps.setInt(1, sid);
@@ -149,6 +160,7 @@ public class HABMSDB {
     }
 
     // find
+    /** 按 AID/PID/Phone 任一匹配查询账户（限制 1 条）。 */
     public Account FindAccount(String aid, String pid, String phone) throws SQLException {
         String sql = "SELECT * FROM Account WHERE AID=? OR PID=? OR Phone=? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -164,6 +176,7 @@ public class HABMSDB {
         }
     }
 
+    /** 按 DID 或姓名查询医生（限制 1 条）。 */
     public DoctorAccount FindDoctorAccount(String did, String name) throws SQLException {
         String sql = "SELECT * FROM Doctor WHERE DID=? OR Name=? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -178,10 +191,12 @@ public class HABMSDB {
         }
     }
 
+    /** 按科室查找医生列表。 */
     public DoctorAccount[] FindDoctorAccounts(String department) throws SQLException {
         return findDoctorsWithWhere("Department=?", department);
     }
 
+    /** 按姓名模糊/精确查询医生列表。 */
     public DoctorAccount[] FindDoctorAccountsByName(String name) throws SQLException {
         return findDoctorsWithWhere("Name=?", name);
     }
@@ -200,6 +215,7 @@ public class HABMSDB {
         return list.toArray(new DoctorAccount[0]);
     }
 
+    /** 查单个预约，附带医生与排班时间。 */
     public Appointment FindAppointment(String apid) throws SQLException {
         String sql = "SELECT a.*, s.STime, s.ETime, d.Name as DocName, d.Department as DocDept FROM Appointment a JOIN Schedule s ON a.SID=s.SID JOIN Doctor d ON a.DID=d.DID WHERE a.APID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -213,18 +229,22 @@ public class HABMSDB {
         }
     }
 
+    /** 查询患者的全部预约。 */
     public Appointment[] FindAppointmentBelongAccount(String aid) throws SQLException {
         return findAppointmentsWithWhere("a.AID=?", aid);
     }
 
+    /** 查询医生的全部预约。 */
     public Appointment[] FindAppointmentBelongDoctorAccount(String did) throws SQLException {
         return findAppointmentsWithWhere("a.DID=?", did);
     }
 
+    /** 查询某排班下的全部预约。 */
     public Appointment[] FindAppointmentBelongSchedule(int sid) throws SQLException {
         return findAppointmentsWithWhere("a.SID=?", sid);
     }
 
+    /** 按状态查询预约。 */
     public Appointment[] FindAppointmentByStatu(AppointmentStatus statu) throws SQLException {
         return findAppointmentsWithWhere("a.Statu=?", statu.name());
     }
@@ -247,6 +267,7 @@ public class HABMSDB {
         return list.toArray(new Appointment[0]);
     }
 
+    /** 按 SID 查排班。 */
     public Schedule FindSchedule(int sid) throws SQLException {
         String sql = "SELECT * FROM Schedule WHERE SID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -260,6 +281,7 @@ public class HABMSDB {
         }
     }
 
+    /** 查某医生全部排班。 */
     public Schedule[] FindScheduleBelongDoctorAccount(String did) throws SQLException {
         String sql = "SELECT * FROM Schedule WHERE DID=?";
         List<Schedule> list = new ArrayList<>();
@@ -274,6 +296,7 @@ public class HABMSDB {
         return list.toArray(new Schedule[0]);
     }
 
+    /** 查覆盖指定时间的排班列表。 */
     public Schedule[] FindScheduleByTime(LocalDateTime time) throws SQLException {
         String sql = "SELECT * FROM Schedule WHERE STime<=? AND ETime>=?";
         List<Schedule> list = new ArrayList<>();
@@ -290,6 +313,7 @@ public class HABMSDB {
         return list.toArray(new Schedule[0]);
     }
 
+    /** 按时间与科室过滤排班列表。 */
     public Schedule[] FindScheduleByTimeInDepartment(LocalDateTime time, String department) throws SQLException {
         String sql = "SELECT s.* FROM Schedule s JOIN Doctor d ON s.DID=d.DID WHERE s.STime<=? AND s.ETime>=? AND d.Department=?";
         List<Schedule> list = new ArrayList<>();
@@ -308,6 +332,7 @@ public class HABMSDB {
     }
 
     // change
+    /** 修改患者姓名/密码/电话。 */
     public void ChangeAccountInfo(Account account) throws SQLException {
         String sql = "UPDATE Account SET Name=?, Password=?, Phone=? WHERE AID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -319,6 +344,7 @@ public class HABMSDB {
         }
     }
 
+    /** 修改医生资料。 */
     public void ChangeDoctorAccountInfo(DoctorAccount doctor) throws SQLException {
         String sql = "UPDATE Doctor SET Name=?, Password=?, Admin=?, Department=?, Description=? WHERE DID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -332,6 +358,9 @@ public class HABMSDB {
         }
     }
 
+    /**
+     * 更新预约状态，若从 Ok -> Abandon 则返还号源；使用事务保证一致性。
+     */
     public void ChangeAppointmentStatu(String apid, AppointmentStatus statu) throws SQLException {
         String selectSql = "SELECT Statu, SID FROM Appointment WHERE APID=? FOR UPDATE";
         String updateAppointmentSql = "UPDATE Appointment SET Statu=? WHERE APID=?";
@@ -375,7 +404,7 @@ public class HABMSDB {
         }
     }
 
-    /** 修改排班容量数据，输入的是增量 */
+    /** 修改排班容量数据，输入的是增量。 */
     public void ChangeScheduleCapacity(int sid, int delta) throws SQLException {
         String sql = "UPDATE Schedule SET Capacity=Capacity+?, Res=Res+? WHERE SID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -386,7 +415,7 @@ public class HABMSDB {
         }
     }
 
-    /** 尝试预定操作，成功返回预定数据对象，失败返回null */
+    /** 尝试预定操作，原子扣减号源并插入预约，失败回滚。 */
     public Appointment TryAppointment(String aid, int sid) throws SQLException {
         String updateSql = "UPDATE Schedule SET Res=Res-1 WHERE SID=? AND Res>0";
         String selectSchedule = "SELECT DID, STime, ETime FROM Schedule WHERE SID=?";

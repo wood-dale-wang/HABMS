@@ -46,6 +46,9 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
+/**
+ * 管理端控制器：支持医生/排班的查询、导入、编辑、删除等后台操作。
+ */
 public class AdminMainController {
 
     @FXML private Label doctorFileLabel;
@@ -74,6 +77,7 @@ public class AdminMainController {
     private final FileChooser csvChooser = new FileChooser();
     private final DataFormatter dataFormatter = new DataFormatter();
 
+    /** 初始化表格列绑定与文件选择器过滤。 */
     @FXML
     public void initialize() {
         csvChooser.getExtensionFilters().add(
@@ -99,6 +103,7 @@ public class AdminMainController {
         }
     }
 
+    /** 拉取全部科室医生并刷新列表。 */
     @FXML
     private void handleRefreshDoctors(ActionEvent event) {
         if (refreshDoctorBtn != null) {
@@ -161,6 +166,7 @@ public class AdminMainController {
         new Thread(task).start();
     }
 
+    /** 拉取全院排班报表并刷新列表。 */
     @FXML
     private void handleRefreshSchedules(ActionEvent event) {
         if (refreshScheduleBtn != null) {
@@ -207,6 +213,7 @@ public class AdminMainController {
         new Thread(task).start();
     }
 
+    /** 删除选中的医生账号。 */
     @FXML
     private void handleDeleteDoctor(ActionEvent event) {
         Doctor selected = doctorTable.getSelectionModel().getSelectedItem();
@@ -249,6 +256,7 @@ public class AdminMainController {
         });
     }
 
+    /** 删除选中的排班。 */
     @FXML
     private void handleDeleteSchedule(ActionEvent event) {
         HABMS.client.model.Schedule selected = scheduleTable.getSelectionModel().getSelectedItem();
@@ -291,6 +299,7 @@ public class AdminMainController {
         });
     }
 
+    /** 通过弹窗编辑排班信息并提交更新。 */
     @FXML
     private void handleEditSchedule(ActionEvent event) {
         HABMS.client.model.Schedule selected = scheduleTable.getSelectionModel().getSelectedItem();
@@ -381,6 +390,7 @@ public class AdminMainController {
         });
     }
 
+    /** 从文件批量导入医生账户。 */
     @FXML
     private void handleImportDoctors(ActionEvent event) {
         File file = csvChooser.showOpenDialog(((Node) event.getSource()).getScene().getWindow());

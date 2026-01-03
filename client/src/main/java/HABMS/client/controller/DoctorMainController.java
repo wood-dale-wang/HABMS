@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 医生端控制器：展示排班、候诊预约和个人资料，管理员可见管理页。
+ */
 public class DoctorMainController {
 
     @FXML private Label welcomeLabel;
@@ -58,6 +61,7 @@ public class DoctorMainController {
     @FXML private TextArea profileDesc;
     @FXML private CheckBox profileAdmin;
 
+    /** 初始化表格列、用户信息并加载初始数据。 */
     @FXML
     public void initialize() {
         Doctor doctor = Session.getCurrentDoctor();
@@ -116,12 +120,14 @@ public class DoctorMainController {
         handleRefreshAppointments(null);
     }
 
+    /** 退出医生登录并返回登录页。 */
     @FXML
     private void handleLogout(ActionEvent event) throws IOException {
         Session.clear();
         App.setRoot("view/login", "登录");
     }
 
+    /** 重新加载当前医生的排班列表。 */
     @FXML
     private void handleRefreshSchedules(ActionEvent event) {
         Doctor doctor = Session.getCurrentDoctor();
@@ -159,6 +165,7 @@ public class DoctorMainController {
         new Thread(task).start();
     }
 
+    /** 拉取医生的预约列表，仅显示候诊中的预约。 */
     @FXML
     private void handleRefreshAppointments(ActionEvent event) {
         Request req = new Request("doctor_appointments", null);
@@ -192,6 +199,7 @@ public class DoctorMainController {
         new Thread(task).start();
     }
 
+    /** 按排班叫号下一位候诊患者。 */
     @FXML
     private void handleCallNext(ActionEvent event) {
         Schedule selectedSchedule = workScheduleCombo.getSelectionModel().getSelectedItem();
@@ -242,6 +250,7 @@ public class DoctorMainController {
         new Thread(task).start();
     }
 
+    /** 完成当前诊疗占位的简单占位逻辑。 */
     @FXML
     private void handleCompleteDiagnosis(ActionEvent event) {
         diagnosisArea.clear();
@@ -249,6 +258,7 @@ public class DoctorMainController {
     }
 
     // Management Handlers
+    /** 选择数据导入文件（管理员可见）。 */
     @FXML
     private void handleSelectImportFile(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
@@ -260,6 +270,7 @@ public class DoctorMainController {
         }
     }
 
+    /** 模拟导入数据的占位功能。 */
     @FXML
     private void handleImportData(ActionEvent event) {
         if (selectedImportFile == null) {
@@ -270,11 +281,13 @@ public class DoctorMainController {
         // TODO: Implement POI logic here
     }
 
+    /** 导出预约数据的占位功能。 */
     @FXML
     private void handleExportAppointments(ActionEvent event) {
         showAlert("提示", "导出功能暂未实现");
     }
 
+    /** 报表生成的占位功能。 */
     @FXML
     private void handleGenerateReport(ActionEvent event) {
         showAlert("提示", "报表生成功能暂未实现");

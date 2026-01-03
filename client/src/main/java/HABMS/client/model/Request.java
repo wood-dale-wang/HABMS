@@ -1,5 +1,8 @@
 package HABMS.client.model;
 
+/**
+ * 发送到服务器的统一请求封装。
+ */
 public class Request {
     private String type;
     private Object data;

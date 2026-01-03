@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * 患者端控制器：负责挂号、个人预约管理与资料维护。
+ */
 public class PatientMainController {
 
     // Booking Tab
@@ -55,6 +58,7 @@ public class PatientMainController {
     @FXML private ComboBox<String> profileSexCombo;
     @FXML private Label profileStatusLabel;
 
+    /** 初始化各个 tab 的表格/控件并加载数据。 */
     @FXML
     public void initialize() {
         setupBookingTab();
@@ -62,6 +66,7 @@ public class PatientMainController {
         setupProfileTab();
     }
 
+    /** 预约挂号页表格绑定与联动。 */
     private void setupBookingTab() {
         // Setup Doctor Table
         docNameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -91,6 +96,7 @@ public class PatientMainController {
         });
     }
 
+    /** 初始化我的预约页表格。 */
     private void setupAppointmentsTab() {
         apptIdCol.setCellValueFactory(new PropertyValueFactory<>("apid"));
         apptAidCol.setCellValueFactory(new PropertyValueFactory<>("aid"));
@@ -103,6 +109,7 @@ public class PatientMainController {
         handleRefreshAppointments(null);
     }
 
+    /** 初始化个人资料页字段。 */
     private void setupProfileTab() {
         User user = Session.getCurrentUser();
         if (user != null) {
@@ -116,6 +123,7 @@ public class PatientMainController {
 
     // --- Network Tasks ---
 
+    /** 拉取科室列表填充左侧列表。 */
     private void loadDepartments() {
         Task<Response> task = new Task<>() {
             @Override
@@ -133,6 +141,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 按科室加载医生列表。 */
     private void loadDoctors(String department) {
         Map<String, String> data = new HashMap<>();
         data.put("department", department);
@@ -152,6 +161,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 按医生加载排班列表。 */
     private void loadSchedules(String did) {
         Map<String, String> data = new HashMap<>();
         data.put("did", did);
@@ -171,6 +181,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 手动刷新当前医生排班。 */
     @FXML
     private void handleRefreshSchedules(ActionEvent event) {
         Doctor selectedDoc = doctorTable.getSelectionModel().getSelectedItem();
@@ -179,6 +190,7 @@ public class PatientMainController {
         }
     }
 
+    /** 通过姓名查询医生列表。 */
     @FXML
     private void handleSearchDoctor(ActionEvent event) {
         String name = searchDoctorField.getText().trim();
@@ -213,6 +225,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 提交预约请求。 */
     @FXML
     private void handleBookAppointment(ActionEvent event) {
         Schedule selectedSchedule = scheduleTable.getSelectionModel().getSelectedItem();
@@ -245,6 +258,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 刷新“我的预约”列表。 */
     @FXML
     private void handleRefreshAppointments(ActionEvent event) {
         Task<Response> task = new Task<>() {
@@ -263,6 +277,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 取消选中的预约。 */
     @FXML
     private void handleCancelAppointment(ActionEvent event) {
         Appointment selected = appointmentTable.getSelectionModel().getSelectedItem();
@@ -294,6 +309,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 更新个人资料并同步 Session。 */
     @FXML
     private void handleUpdateProfile(ActionEvent event) {
         Map<String, String> data = new HashMap<>();
@@ -325,6 +341,7 @@ public class PatientMainController {
         new Thread(task).start();
     }
 
+    /** 注销账号并返回登录页。 */
     @FXML
     private void handleDeleteAccount(ActionEvent event) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -356,6 +373,7 @@ public class PatientMainController {
         }
     }
 
+    /** 退出登录并回到登录页。 */
     @FXML
     private void handleLogout(ActionEvent event) throws IOException {
         NetworkClient.getInstance().sendRequest(new Request("account_logout", null));

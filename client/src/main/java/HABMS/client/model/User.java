@@ -1,5 +1,8 @@
 package HABMS.client.model;
 
+/**
+ * 患者账户信息 DTO。
+ */
 public class User {
     private String aid;
     private String name;

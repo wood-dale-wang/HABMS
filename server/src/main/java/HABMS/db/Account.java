@@ -2,7 +2,7 @@ package HABMS.db;
 
 import java.util.Objects;
 
-/** 患者账户数据对象 */
+/** 患者账户数据对象。 */
 public final class Account {
     private final String aid;
     private final String name;
@@ -11,7 +11,7 @@ public final class Account {
     private final String phone;
     private final Sex sex;
 
-    /** 一般初始化方法用于从数据库提取数据 */
+    /** 一般初始化方法用于从数据库提取数据。 */
     public Account(String aid, String name, String passwordHex, String pid, String phone, Sex sex) {
         this.aid = Objects.requireNonNull(aid);
         this.name = Objects.requireNonNull(name);
@@ -21,7 +21,7 @@ public final class Account {
         this.sex = Objects.requireNonNull(sex);
     }
 
-    /** create工厂方法用于创建带新AID的对象 */
+    /** 工厂方法：创建带新 AID 的账户对象。 */
     public static Account create(String name, String passwordHex, String pid, String phone, Sex sex) {
         return new Account(IdGenerator.newAid(), name, passwordHex, pid, phone, sex);
     }

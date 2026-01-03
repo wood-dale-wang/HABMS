@@ -3,7 +3,7 @@ package HABMS.db;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/** 预定订单数据对象 */
+/** 预约订单数据对象。 */
 public final class Appointment {
     private final int serialNumber;
     private final String apid;
@@ -16,7 +16,7 @@ public final class Appointment {
     private final LocalDateTime startTime;
     private final LocalDateTime endTime;
 
-    /** 一般初始化方法用于从数据库提取数据 */
+    /** 一般初始化方法用于从数据库提取数据。 */
     public Appointment(int serialNumber, String apid, String aid, String did, String doctorName, String department, int sid, AppointmentStatus status,
                        LocalDateTime startTime, LocalDateTime endTime) {
         this.serialNumber = serialNumber;
@@ -31,7 +31,7 @@ public final class Appointment {
         this.endTime = endTime;
     }
 
-    /** create工厂方法用于创建带新APID的对象 */
+    /** 工厂方法：创建带新 APID 的预约对象。 */
     public static Appointment create(String aid, String did, int sid, AppointmentStatus status,
                                      LocalDateTime startTime, LocalDateTime endTime) {
         return new Appointment(0, IdGenerator.newApid(), aid, did, null, null, sid, status, startTime, endTime);

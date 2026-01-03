@@ -1,5 +1,8 @@
 package HABMS.client.model;
 
+/**
+ * 客户端展示的预约记录 DTO。
+ */
 public class Appointment {
     private String serialNumber;
     private String apid;

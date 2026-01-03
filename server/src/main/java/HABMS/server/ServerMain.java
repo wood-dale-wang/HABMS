@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** Entry point that wires configuration, database and server runtime. */
+/** 服务器入口：读取配置，初始化数据库访问与运行时，然后启动监听。 */
 public final class ServerMain {
     private static final Logger LOG = Logger.getLogger(ServerMain.class.getName());
 
@@ -37,6 +37,7 @@ public final class ServerMain {
         }
     }
 
+    /** 优先读取环境变量，缺省时返回默认值。 */
     private static String env(String key, String def) {
         String v = System.getenv(key);
         return v == null || v.isBlank() ? def : v;

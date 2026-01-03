@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+/**
+ * Jackson 封装：提供统一的 ObjectMapper 及序列化工具方法。
+ */
 public class JsonUtil {
     private static final ObjectMapper mapper = new ObjectMapper();
 

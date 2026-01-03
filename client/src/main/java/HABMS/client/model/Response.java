@@ -3,6 +3,9 @@ package HABMS.client.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
+/**
+ * 服务器响应的通用包装，包含状态与数据节点。
+ */
 public class Response {
     @JsonProperty("Statu")
     private String statu;
