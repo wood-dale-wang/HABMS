@@ -61,6 +61,16 @@ public class AdminMainController {
     @FXML private TableColumn<Doctor, String> colDesc;
     @FXML private Button refreshDoctorBtn;
 
+    @FXML private Label scheduleListResult;
+    @FXML private Button refreshScheduleBtn;
+    @FXML private TableView<HABMS.client.model.Schedule> scheduleTable;
+    @FXML private TableColumn<HABMS.client.model.Schedule, Integer> colSid;
+    @FXML private TableColumn<HABMS.client.model.Schedule, String> colSDid;
+    @FXML private TableColumn<HABMS.client.model.Schedule, String> colSStart;
+    @FXML private TableColumn<HABMS.client.model.Schedule, String> colSEnd;
+    @FXML private TableColumn<HABMS.client.model.Schedule, Integer> colSCap;
+    @FXML private TableColumn<HABMS.client.model.Schedule, Integer> colSRes;
+
     private final FileChooser csvChooser = new FileChooser();
     private final DataFormatter dataFormatter = new DataFormatter();
 
@@ -77,6 +87,15 @@ public class AdminMainController {
             colDept.setCellValueFactory(new PropertyValueFactory<>("department"));
             colAdmin.setCellValueFactory(new PropertyValueFactory<>("admin"));
             colDesc.setCellValueFactory(new PropertyValueFactory<>("description"));
+        }
+
+        if (scheduleTable != null) {
+            colSid.setCellValueFactory(new PropertyValueFactory<>("sid"));
+            colSDid.setCellValueFactory(new PropertyValueFactory<>("did"));
+            colSStart.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+            colSEnd.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+            colSCap.setCellValueFactory(new PropertyValueFactory<>("capacity"));
+            colSRes.setCellValueFactory(new PropertyValueFactory<>("res"));
         }
     }
 
@@ -140,6 +159,226 @@ public class AdminMainController {
         });
 
         new Thread(task).start();
+    }
+
+    @FXML
+    private void handleRefreshSchedules(ActionEvent event) {
+        if (refreshScheduleBtn != null) {
+            refreshScheduleBtn.setDisable(true);
+        }
+        if (scheduleListResult != null) {
+            scheduleListResult.setText("");
+        }
+
+        Task<List<HABMS.client.model.Schedule>> task = new Task<>() {
+            @Override
+            protected List<HABMS.client.model.Schedule> call() throws Exception {
+                Request req = new Request("admin_report", new HashMap<>());
+                Response resp = NetworkClient.getInstance().sendRequest(req);
+                if (!resp.isOk()) {
+                    throw new IOException("获取排班列表失败: " + resp.getErrInfo());
+                }
+                com.fasterxml.jackson.databind.JsonNode data = resp.getData();
+                com.fasterxml.jackson.databind.JsonNode schedulesObj = data.get("schedules");
+                return JsonUtil.getMapper().convertValue(
+                        schedulesObj,
+                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, HABMS.client.model.Schedule.class));
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            List<HABMS.client.model.Schedule> list = task.getValue();
+            scheduleTable.setItems(FXCollections.observableArrayList(list));
+            if (refreshScheduleBtn != null) {
+                refreshScheduleBtn.setDisable(false);
+            }
+        });
+
+        task.setOnFailed(e -> {
+            if (scheduleListResult != null) {
+                scheduleListResult.setText("排班列表刷新失败: " + e.getSource().getException().getMessage());
+            }
+            if (refreshScheduleBtn != null) {
+                refreshScheduleBtn.setDisable(false);
+            }
+            showError("刷新排班列表失败", e.getSource().getException().getMessage());
+        });
+
+        new Thread(task).start();
+    }
+
+    @FXML
+    private void handleDeleteDoctor(ActionEvent event) {
+        Doctor selected = doctorTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showError("未选择医生", "请先在列表中选择要删除的医生");
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("确认删除");
+        alert.setHeaderText("删除医生: " + selected.getName());
+        alert.setContentText("确定要删除该医生吗？此操作不可恢复。");
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                Task<Response> task = new Task<>() {
+                    @Override
+                    protected Response call() throws Exception {
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("did", selected.getDid());
+                        return NetworkClient.getInstance().sendRequest(new Request("admin_delete_doctor", data));
+                    }
+                };
+
+                task.setOnSucceeded(e -> {
+                    Response resp = task.getValue();
+                    if (resp.isOk()) {
+                        handleRefreshDoctors(null);
+                    } else {
+                        showError("删除失败", resp.getErrInfo());
+                    }
+                });
+
+                task.setOnFailed(e -> {
+                    showError("删除失败", e.getSource().getException().getMessage());
+                });
+
+                new Thread(task).start();
+            }
+        });
+    }
+
+    @FXML
+    private void handleDeleteSchedule(ActionEvent event) {
+        HABMS.client.model.Schedule selected = scheduleTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showError("未选择排班", "请先在列表中选择要删除的排班");
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("确认删除");
+        alert.setHeaderText("删除排班 SID: " + selected.getSid());
+        alert.setContentText("确定要删除该排班吗？此操作不可恢复。");
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                Task<Response> task = new Task<>() {
+                    @Override
+                    protected Response call() throws Exception {
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("sid", selected.getSid());
+                        return NetworkClient.getInstance().sendRequest(new Request("admin_delete_schedule", data));
+                    }
+                };
+
+                task.setOnSucceeded(e -> {
+                    Response resp = task.getValue();
+                    if (resp.isOk()) {
+                        handleRefreshSchedules(null);
+                    } else {
+                        showError("删除失败", resp.getErrInfo());
+                    }
+                });
+
+                task.setOnFailed(e -> {
+                    showError("删除失败", e.getSource().getException().getMessage());
+                });
+
+                new Thread(task).start();
+            }
+        });
+    }
+
+    @FXML
+    private void handleEditSchedule(ActionEvent event) {
+        HABMS.client.model.Schedule selected = scheduleTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showError("未选择排班", "请先在列表中选择要修改的排班");
+            return;
+        }
+
+        Dialog<Map<String, Object>> dialog = new Dialog<>();
+        dialog.setTitle("修改排班信息");
+        dialog.setHeaderText("修改排班 SID: " + selected.getSid());
+
+        ButtonType okButtonType = new ButtonType("保存", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new javafx.geometry.Insets(20, 150, 10, 10));
+
+        TextField did = new TextField(selected.getDid());
+        did.setPromptText("医生ID");
+        
+        TextField startTime = new TextField(selected.getStartTime());
+        startTime.setPromptText("2026-01-01T09:00:00");
+        
+        TextField endTime = new TextField(selected.getEndTime());
+        endTime.setPromptText("2026-01-01T12:00:00");
+        
+        TextField capacity = new TextField(String.valueOf(selected.getCapacity()));
+        capacity.setPromptText("20");
+
+        grid.add(new Label("医生ID:"), 0, 0);
+        grid.add(did, 1, 0);
+        grid.add(new Label("开始时间:"), 0, 1);
+        grid.add(startTime, 1, 1);
+        grid.add(new Label("结束时间:"), 0, 2);
+        grid.add(endTime, 1, 2);
+        grid.add(new Label("容量:"), 0, 3);
+        grid.add(capacity, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                Map<String, Object> schedule = new HashMap<>();
+                schedule.put("sid", selected.getSid());
+                schedule.put("did", did.getText().trim());
+                schedule.put("startTime", startTime.getText().trim());
+                schedule.put("endTime", endTime.getText().trim());
+                try {
+                    schedule.put("capacity", Integer.parseInt(capacity.getText().trim()));
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+                return schedule;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(schedule -> {
+            if (schedule.get("capacity") == null) {
+                showError("输入错误", "容量必须为数字");
+                return;
+            }
+            
+            Task<Response> task = new Task<>() {
+                @Override
+                protected Response call() throws Exception {
+                    return NetworkClient.getInstance().sendRequest(new Request("admin_update_schedule", schedule));
+                }
+            };
+
+            task.setOnSucceeded(e -> {
+                Response resp = task.getValue();
+                if (resp.isOk()) {
+                    handleRefreshSchedules(null);
+                } else {
+                    showError("修改排班失败", resp.getErrInfo());
+                }
+            });
+            
+            task.setOnFailed(e -> {
+                showError("修改排班失败", e.getSource().getException().getMessage());
+            });
+            
+            new Thread(task).start();
+        });
     }
 
     @FXML

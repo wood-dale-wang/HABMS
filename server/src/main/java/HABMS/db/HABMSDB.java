@@ -67,6 +67,19 @@ public class HABMSDB {
         }
     }
 
+    public void UpdateSchedule(Schedule schedule) throws SQLException {
+        String sql = "UPDATE Schedule SET DID=?, STime=?, ETime=?, Capacity=?, Res=? WHERE SID=?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, schedule.getDid());
+            ps.setTimestamp(2, Timestamp.valueOf(schedule.getStartTime()));
+            ps.setTimestamp(3, Timestamp.valueOf(schedule.getEndTime()));
+            ps.setInt(4, schedule.getCapacity());
+            ps.setInt(5, schedule.getRes());
+            ps.setInt(6, schedule.getSid());
+            ps.executeUpdate();
+        }
+    }
+
     public void InsertAppointment(Appointment appointment) throws SQLException {
         String sql = "INSERT INTO Appointment(APID,AID,DID,SID,Statu) VALUES (?,?,?,?,?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -166,10 +179,18 @@ public class HABMSDB {
     }
 
     public DoctorAccount[] FindDoctorAccounts(String department) throws SQLException {
-        String sql = "SELECT * FROM Doctor WHERE Department=?";
+        return findDoctorsWithWhere("Department=?", department);
+    }
+
+    public DoctorAccount[] FindDoctorAccountsByName(String name) throws SQLException {
+        return findDoctorsWithWhere("Name=?", name);
+    }
+
+    private DoctorAccount[] findDoctorsWithWhere(String whereClause, String value) throws SQLException {
+        String sql = "SELECT * FROM Doctor WHERE " + whereClause;
         List<DoctorAccount> list = new ArrayList<>();
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, department);
+            ps.setString(1, value);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapDoctor(rs));
@@ -180,7 +201,7 @@ public class HABMSDB {
     }
 
     public Appointment FindAppointment(String apid) throws SQLException {
-        String sql = "SELECT a.*, s.STime, s.ETime FROM Appointment a JOIN Schedule s ON a.SID=s.SID WHERE a.APID=?";
+        String sql = "SELECT a.*, s.STime, s.ETime, d.Name as DocName, d.Department as DocDept FROM Appointment a JOIN Schedule s ON a.SID=s.SID JOIN Doctor d ON a.DID=d.DID WHERE a.APID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, apid);
             try (ResultSet rs = ps.executeQuery()) {
@@ -209,7 +230,7 @@ public class HABMSDB {
     }
 
     private Appointment[] findAppointmentsWithWhere(String whereClause, Object value) throws SQLException {
-        String sql = "SELECT a.*, s.STime, s.ETime FROM Appointment a JOIN Schedule s ON a.SID=s.SID WHERE " + whereClause;
+        String sql = "SELECT a.*, s.STime, s.ETime, d.Name as DocName, d.Department as DocDept FROM Appointment a JOIN Schedule s ON a.SID=s.SID JOIN Doctor d ON a.DID=d.DID WHERE " + whereClause;
         List<Appointment> list = new ArrayList<>();
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             if (value instanceof Integer) {
@@ -459,11 +480,23 @@ public class HABMSDB {
         Timestamp et = rs.getTimestamp("ETime");
         LocalDateTime sTime = st != null ? st.toLocalDateTime() : null;
         LocalDateTime eTime = et != null ? et.toLocalDateTime() : null;
+        
+        String docName = null;
+        String docDept = null;
+        try {
+            docName = rs.getString("DocName");
+            docDept = rs.getString("DocDept");
+        } catch (SQLException e) {
+            // Ignore if columns not present (e.g. if query didn't join)
+        }
+
         return new Appointment(
                 rs.getInt("SerialNumber"),
                 rs.getString("APID"),
                 rs.getString("AID"),
                 rs.getString("DID"),
+                docName,
+                docDept,
                 rs.getInt("SID"),
                 AppointmentStatus.valueOf(rs.getString("Statu")),
                 sTime,

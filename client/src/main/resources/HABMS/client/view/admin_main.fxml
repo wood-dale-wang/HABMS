@@ -49,7 +49,6 @@
                                  <children>
                                     <Button mnemonicParsing="false" onAction="#handleImportDoctors" styleClass="primary-button" text="选择并导入医生账户" />
                                     <Button mnemonicParsing="false" onAction="#handleManualAddDoctor" styleClass="secondary-button" text="手动添加医生" />
-                                    <Button mnemonicParsing="false" onAction="#handleEditDoctor" styleClass="secondary-button" text="修改选中医生" />
                                  </children>
                               </HBox>
                               <Label fx:id="doctorFileLabel" text="未选择文件" styleClass="muted" />
@@ -92,6 +91,8 @@
                               <HBox alignment="CENTER_LEFT" spacing="10.0">
                                  <children>
                                     <Button fx:id="refreshDoctorBtn" mnemonicParsing="false" onAction="#handleRefreshDoctors" styleClass="secondary-button" text="刷新医生列表" />
+                                    <Button mnemonicParsing="false" onAction="#handleEditDoctor" styleClass="secondary-button" text="修改选中医生" />
+                                    <Button mnemonicParsing="false" onAction="#handleDeleteDoctor" styleClass="danger-button" text="删除选中医生" style="-fx-background-color: #e74c3c; -fx-text-fill: white;" />
                                     <Label text="按科室汇总 doctor_query" styleClass="muted" />
                                  </children>
                               </HBox>
@@ -105,6 +106,35 @@
                                  </columns>
                               </TableView>
                               <Label fx:id="doctorListResult" styleClass="error-label" />
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
+                  <TitledPane animated="false" expanded="true" text="查看全部排班">
+                     <content>
+                        <VBox spacing="10.0">
+                           <padding>
+                              <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
+                           </padding>
+                           <children>
+                              <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                 <children>
+                                    <Button fx:id="refreshScheduleBtn" mnemonicParsing="false" onAction="#handleRefreshSchedules" styleClass="secondary-button" text="刷新排班列表" />
+                                    <Button mnemonicParsing="false" onAction="#handleEditSchedule" styleClass="secondary-button" text="修改选中排班" />
+                                    <Button mnemonicParsing="false" onAction="#handleDeleteSchedule" styleClass="danger-button" text="删除选中排班" style="-fx-background-color: #e74c3c; -fx-text-fill: white;" />
+                                 </children>
+                              </HBox>
+                              <TableView fx:id="scheduleTable" prefHeight="220.0">
+                                 <columns>
+                                    <TableColumn fx:id="colSid" prefWidth="60.0" text="SID" />
+                                    <TableColumn fx:id="colSDid" prefWidth="90.0" text="DID" />
+                                    <TableColumn fx:id="colSStart" prefWidth="150.0" text="开始时间" />
+                                    <TableColumn fx:id="colSEnd" prefWidth="150.0" text="结束时间" />
+                                    <TableColumn fx:id="colSCap" prefWidth="60.0" text="容量" />
+                                    <TableColumn fx:id="colSRes" prefWidth="60.0" text="已约" />
+                                 </columns>
+                              </TableView>
+                              <Label fx:id="scheduleListResult" styleClass="error-label" />
                            </children>
                         </VBox>
                      </content>

@@ -12,6 +12,7 @@ public class Appointment {
     
     // Extra fields for display
     private String doctorName;
+    private String department;
 
     public String getSerialNumber() { return serialNumber; }
     public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
@@ -40,8 +41,29 @@ public class Appointment {
     public String getDoctorName() { return doctorName; }
     public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
     
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+    
     public String getTimeSlot() {
         if (startTime == null) return "";
-        return startTime.replace("T", " ") + " - " + (endTime != null ? endTime.substring(11) : "");
+        // Format: yyyy-MM-dd HH:mm - HH:mm
+        String start = startTime.replace("T", " ");
+        if (start.length() > 16) start = start.substring(0, 16);
+        
+        String end = "";
+        if (endTime != null && endTime.length() > 16) {
+            end = endTime.substring(11, 16);
+        }
+        return start + " - " + end;
+    }
+
+    public String getStatusDisplay() {
+        if (status == null) return "";
+        switch (status) {
+            case "Ok": return "已预约";
+            case "Abandon": return "已取消";
+            case "Done": return "已完成";
+            default: return status;
+        }
     }
 }
