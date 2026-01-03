@@ -9,29 +9,25 @@ import HABMS.client.model.Response;
 import HABMS.client.model.Schedule;
 import HABMS.client.net.NetworkClient;
 import HABMS.client.util.JsonUtil;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.stage.FileChooser;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 医生端控制器：展示排班、候诊预约和个人资料，管理员可见管理页。
+ * 医生端控制器：展示排班、候诊预约和个人资料。
  */
 public class DoctorMainController {
 
     @FXML private Label welcomeLabel;
     @FXML private TabPane mainTabPane;
-    @FXML private Tab managementTab;
 
     // Schedule Tab
     @FXML private TableView<Schedule> scheduleTable;
@@ -50,9 +46,7 @@ public class DoctorMainController {
     @FXML private TextArea diagnosisArea;
     @FXML private ComboBox<Schedule> workScheduleCombo;
 
-    // Management Tab
-    @FXML private Label importFileLabel;
-    private File selectedImportFile;
+    // Removed management tab; admin功能迁移至独立页面
 
     // Profile Tab
     @FXML private TextField profileDid;
@@ -95,11 +89,6 @@ public class DoctorMainController {
         profileDept.setText(doctor.getDepartment());
         profileDesc.setText(doctor.getDescription());
         profileAdmin.setSelected(doctor.isAdmin());
-
-        // Management Tab Visibility
-        if (!doctor.isAdmin()) {
-            mainTabPane.getTabs().remove(managementTab);
-        }
 
         // Setup ComboBox
         workScheduleCombo.setCellFactory(param -> new ListCell<>() {
@@ -257,41 +246,6 @@ public class DoctorMainController {
         showAlert("提示", "诊疗已完成，请呼叫下一位");
     }
 
-    // Management Handlers
-    /** 选择数据导入文件（管理员可见）。 */
-    @FXML
-    private void handleSelectImportFile(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("选择导入文件");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel Files", "*.xls", "*.xlsx"));
-        selectedImportFile = fileChooser.showOpenDialog(welcomeLabel.getScene().getWindow());
-        if (selectedImportFile != null) {
-            importFileLabel.setText(selectedImportFile.getName());
-        }
-    }
-
-    /** 模拟导入数据的占位功能。 */
-    @FXML
-    private void handleImportData(ActionEvent event) {
-        if (selectedImportFile == null) {
-            showAlert("错误", "请先选择文件");
-            return;
-        }
-        showAlert("提示", "正在导入 " + selectedImportFile.getName() + " (模拟)");
-        // TODO: Implement POI logic here
-    }
-
-    /** 导出预约数据的占位功能。 */
-    @FXML
-    private void handleExportAppointments(ActionEvent event) {
-        showAlert("提示", "导出功能暂未实现");
-    }
-
-    /** 报表生成的占位功能。 */
-    @FXML
-    private void handleGenerateReport(ActionEvent event) {
-        showAlert("提示", "报表生成功能暂未实现");
-    }
 
     private void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

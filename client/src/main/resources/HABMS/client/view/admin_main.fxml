@@ -81,6 +81,30 @@
                         </VBox>
                      </content>
                   </TitledPane>
+                  <TitledPane animated="false" expanded="true" text="预约数据与报表">
+                     <content>
+                        <VBox spacing="10.0">
+                           <padding>
+                              <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
+                           </padding>
+                           <children>
+                              <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#handleRefreshAppointments" styleClass="secondary-button" text="刷新预约数据" />
+                                    <Label fx:id="appointmentStatusLabel" text="未加载" styleClass="muted" />
+                                 </children>
+                              </HBox>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#handleExportAppointments" styleClass="primary-button" text="导出预约记录 (Excel)" />
+                                    <Button mnemonicParsing="false" onAction="#handleGenerateReport" styleClass="secondary-button" text="生成月度报告 (PDF)" />
+                                 </children>
+                              </HBox>
+                              <Label text="使用 admin_all_appointments + admin_report 聚合" styleClass="muted" />
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
                   <TitledPane animated="false" expanded="true" text="查看全部医生">
                      <content>
                         <VBox spacing="10.0">

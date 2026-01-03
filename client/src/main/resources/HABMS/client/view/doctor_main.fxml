@@ -63,38 +63,6 @@
                         <Button text="完成诊疗" onAction="#handleCompleteDiagnosis" styleClass="primary-button" maxWidth="Infinity"/>
                     </VBox>
                 </Tab>
-                <Tab fx:id="managementTab" text="医院管理">
-                    <VBox spacing="20" style="-fx-padding: 30;">
-                        <Label text="医院管理功能 (仅管理员可见)">
-                            <font><Font size="18.0" /></font>
-                        </Label>
-                        
-                        <TitledPane text="批量导入" collapsible="false">
-                            <VBox spacing="10">
-                                <Label text="导入医生信息和排班表 (Excel .xls)" />
-                                <HBox spacing="10">
-                                    <Button text="选择文件..." onAction="#handleSelectImportFile"/>
-                                    <Label fx:id="importFileLabel" text="未选择文件"/>
-                                </HBox>
-                                <Button text="开始导入" onAction="#handleImportData"/>
-                            </VBox>
-                        </TitledPane>
-                        
-                        <TitledPane text="数据导出" collapsible="false">
-                            <VBox spacing="10">
-                                <Label text="导出预约记录为 Excel 文件" />
-                                <Button text="导出预约记录" onAction="#handleExportAppointments"/>
-                            </VBox>
-                        </TitledPane>
-                        
-                        <TitledPane text="统计报告" collapsible="false">
-                            <VBox spacing="10">
-                                <Label text="生成月度统计报告 (PDF)" />
-                                <Button text="生成报告" onAction="#handleGenerateReport"/>
-                            </VBox>
-                        </TitledPane>
-                    </VBox>
-                </Tab>
                 <Tab text="个人信息">
                     <VBox spacing="15" style="-fx-padding: 30;">
                         <GridPane hgap="10" vgap="10">

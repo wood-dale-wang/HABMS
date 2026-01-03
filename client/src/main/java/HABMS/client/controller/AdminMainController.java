@@ -1,11 +1,19 @@
 package HABMS.client.controller;
 
 import HABMS.client.App;
+import HABMS.client.model.Appointment;
 import HABMS.client.model.Doctor;
 import HABMS.client.model.Request;
 import HABMS.client.model.Response;
 import HABMS.client.net.NetworkClient;
 import HABMS.client.util.JsonUtil;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Font;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.BaseFont;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
@@ -24,27 +32,38 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 /**
  * 管理端控制器：支持医生/排班的查询、导入、编辑、删除等后台操作。
@@ -73,9 +92,15 @@ public class AdminMainController {
     @FXML private TableColumn<HABMS.client.model.Schedule, String> colSEnd;
     @FXML private TableColumn<HABMS.client.model.Schedule, Integer> colSCap;
     @FXML private TableColumn<HABMS.client.model.Schedule, Integer> colSRes;
+    @FXML private Label appointmentStatusLabel;
 
     private final FileChooser csvChooser = new FileChooser();
     private final DataFormatter dataFormatter = new DataFormatter();
+    private List<Appointment> latestAppointments = List.of();
+
+    private BaseFont zhBaseFont;
+    private Font zhTitleFont;
+    private Font zhBodyFont;
 
     /** 初始化表格列绑定与文件选择器过滤。 */
     @FXML
@@ -176,9 +201,9 @@ public class AdminMainController {
             scheduleListResult.setText("");
         }
 
-        Task<List<HABMS.client.model.Schedule>> task = new Task<>() {
+        Task<Map<String, Object>> task = new Task<>() {
             @Override
-            protected List<HABMS.client.model.Schedule> call() throws Exception {
+            protected Map<String, Object> call() throws Exception {
                 Request req = new Request("admin_report", new HashMap<>());
                 Response resp = NetworkClient.getInstance().sendRequest(req);
                 if (!resp.isOk()) {
@@ -186,15 +211,32 @@ public class AdminMainController {
                 }
                 com.fasterxml.jackson.databind.JsonNode data = resp.getData();
                 com.fasterxml.jackson.databind.JsonNode schedulesObj = data.get("schedules");
-                return JsonUtil.getMapper().convertValue(
+                List<HABMS.client.model.Schedule> schedules = JsonUtil.getMapper().convertValue(
                         schedulesObj,
                         JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, HABMS.client.model.Schedule.class));
+
+                List<Appointment> appointments = JsonUtil.getMapper().convertValue(
+                        data.get("appointments"),
+                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Appointment.class));
+
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("schedules", schedules);
+                result.put("appointments", appointments);
+                return result;
             }
         };
 
         task.setOnSucceeded(e -> {
-            List<HABMS.client.model.Schedule> list = task.getValue();
+            Map<String, Object> payload = task.getValue();
+            @SuppressWarnings("unchecked")
+            List<HABMS.client.model.Schedule> list = (List<HABMS.client.model.Schedule>) payload.get("schedules");
+            @SuppressWarnings("unchecked")
+            List<Appointment> apps = (List<Appointment>) payload.get("appointments");
             scheduleTable.setItems(FXCollections.observableArrayList(list));
+            latestAppointments = apps;
+            if (appointmentStatusLabel != null) {
+                appointmentStatusLabel.setText("已加载预约数据: " + apps.size() + " 条");
+            }
             if (refreshScheduleBtn != null) {
                 refreshScheduleBtn.setDisable(false);
             }
@@ -208,6 +250,43 @@ public class AdminMainController {
                 refreshScheduleBtn.setDisable(false);
             }
             showError("刷新排班列表失败", e.getSource().getException().getMessage());
+        });
+
+        new Thread(task).start();
+    }
+
+    /** 拉取全院预约列表（含全部状态）。 */
+    @FXML
+    private void handleRefreshAppointments(ActionEvent event) {
+        if (appointmentStatusLabel != null) {
+            appointmentStatusLabel.setText("正在拉取预约数据...");
+        }
+
+        Task<List<Appointment>> task = new Task<>() {
+            @Override
+            protected List<Appointment> call() throws Exception {
+                Response resp = NetworkClient.getInstance().sendRequest(new Request("admin_all_appointments", new HashMap<>()));
+                if (!resp.isOk()) {
+                    throw new IOException("获取预约列表失败: " + resp.getErrInfo());
+                }
+                return JsonUtil.getMapper().convertValue(
+                        resp.getData(),
+                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Appointment.class));
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            latestAppointments = task.getValue();
+            if (appointmentStatusLabel != null) {
+                appointmentStatusLabel.setText("已加载预约数据: " + latestAppointments.size() + " 条");
+            }
+        });
+
+        task.setOnFailed(e -> {
+            if (appointmentStatusLabel != null) {
+                appointmentStatusLabel.setText("预约数据获取失败: " + e.getSource().getException().getMessage());
+            }
+            showError("刷新预约列表失败", e.getSource().getException().getMessage());
         });
 
         new Thread(task).start();
@@ -864,6 +943,228 @@ public class AdminMainController {
             throw new IOException("读取 Excel 失败: " + ex.getMessage(), ex);
         }
         return schedules;
+    }
+
+    /** 导出预约数据为 Excel。 */
+    @FXML
+    private void handleExportAppointments(ActionEvent event) {
+        ensureAppointmentsThen(this::doExportAppointments);
+    }
+
+    /** 生成月度预约统计 PDF。 */
+    @FXML
+    private void handleGenerateReport(ActionEvent event) {
+        ensureAppointmentsThen(this::doGenerateMonthlyReport);
+    }
+
+    private void ensureAppointmentsThen(Consumer<List<Appointment>> consumer) {
+        if (latestAppointments != null && !latestAppointments.isEmpty()) {
+            consumer.accept(latestAppointments);
+            return;
+        }
+
+        if (appointmentStatusLabel != null) {
+            appointmentStatusLabel.setText("正在拉取预约数据...");
+        }
+
+        Task<List<Appointment>> task = new Task<>() {
+            @Override
+            protected List<Appointment> call() throws Exception {
+                Response resp = NetworkClient.getInstance().sendRequest(new Request("admin_all_appointments", new HashMap<>()));
+                if (!resp.isOk()) {
+                    throw new IOException("获取预约列表失败: " + resp.getErrInfo());
+                }
+                return JsonUtil.getMapper().convertValue(
+                        resp.getData(),
+                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Appointment.class));
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            latestAppointments = task.getValue();
+            if (appointmentStatusLabel != null) {
+                appointmentStatusLabel.setText("已加载预约数据: " + latestAppointments.size() + " 条");
+            }
+            consumer.accept(latestAppointments);
+        });
+
+        task.setOnFailed(e -> {
+            if (appointmentStatusLabel != null) {
+                appointmentStatusLabel.setText("预约数据获取失败: " + e.getSource().getException().getMessage());
+            }
+            showError("获取预约数据失败", e.getSource().getException().getMessage());
+        });
+
+        new Thread(task).start();
+    }
+
+    private void doExportAppointments(List<Appointment> source) {
+        if (source == null || source.isEmpty()) {
+            showError("导出失败", "暂无可导出的预约记录");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("导出预约记录");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel 97-2003 (*.xls)", "*.xls"));
+        chooser.setInitialFileName("appointments-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".xls");
+        File file = chooser.showSaveDialog(doctorTable != null ? doctorTable.getScene().getWindow() : null);
+        if (file == null) return;
+
+        try (Workbook workbook = new HSSFWorkbook(); FileOutputStream fos = new FileOutputStream(file)) {
+            Sheet sheet = workbook.createSheet("Appointments");
+            String[] headers = {"预约号", "患者ID", "排班ID", "医生ID", "科室", "医生姓名", "开始时间", "结束时间", "状态"};
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+
+            int rowIdx = 1;
+            for (Appointment app : source) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(app.getApid() != null ? app.getApid() : "");
+                row.createCell(1).setCellValue(app.getAid() != null ? app.getAid() : "");
+                row.createCell(2).setCellValue(app.getSid());
+                row.createCell(3).setCellValue(app.getDid() != null ? app.getDid() : "");
+                row.createCell(4).setCellValue(app.getDepartment() != null ? app.getDepartment() : "");
+                row.createCell(5).setCellValue(app.getDoctorName() != null ? app.getDoctorName() : "");
+                row.createCell(6).setCellValue(app.getStartTime() != null ? app.getStartTime().replace('T', ' ') : "");
+                row.createCell(7).setCellValue(app.getEndTime() != null ? app.getEndTime().replace('T', ' ') : "");
+                row.createCell(8).setCellValue(app.getStatusDisplay());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(fos);
+            showInfo("导出成功", "预约记录已导出到\n" + file.getAbsolutePath());
+        } catch (Exception ex) {
+            showError("导出失败", ex.getMessage());
+        }
+    }
+
+    private void doGenerateMonthlyReport(List<Appointment> source) {
+        if (source == null || source.isEmpty()) {
+            showError("生成失败", "暂无预约数据");
+            return;
+        }
+
+        String defaultMonth = YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        TextInputDialog dialog = new TextInputDialog(defaultMonth);
+        dialog.setTitle("生成月度报表");
+        dialog.setHeaderText("输入统计月份 (yyyy-MM)");
+        dialog.setContentText("月份:");
+        Optional<String> result = dialog.showAndWait();
+        if (result.isEmpty()) return;
+
+        YearMonth targetMonth;
+        try {
+            targetMonth = YearMonth.parse(result.get().trim(), DateTimeFormatter.ofPattern("yyyy-MM"));
+        } catch (DateTimeParseException ex) {
+            showError("生成失败", "月份格式不正确，应为 yyyy-MM");
+            return;
+        }
+
+        List<Appointment> monthApps = source.stream()
+                .filter(a -> isInMonth(a.getStartTime(), targetMonth))
+                .toList();
+
+        if (monthApps.isEmpty()) {
+            showError("生成失败", "该月份没有预约数据");
+            return;
+        }
+
+        Map<String, Integer> deptCount = new HashMap<>();
+        Map<String, Integer> doctorCount = new HashMap<>();
+        for (Appointment app : monthApps) {
+            String dept = app.getDepartment() != null ? app.getDepartment() : "未知科室";
+            deptCount.put(dept, deptCount.getOrDefault(dept, 0) + 1);
+
+            String doctorKey = (app.getDoctorName() != null ? app.getDoctorName() : "未知医生")
+                    + " (" + (app.getDid() != null ? app.getDid() : "?") + ")";
+            doctorCount.put(doctorKey, doctorCount.getOrDefault(doctorKey, 0) + 1);
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("保存月度报表");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF 文件", "*.pdf"));
+        chooser.setInitialFileName("report-" + targetMonth + ".pdf");
+        File file = chooser.showSaveDialog(doctorTable != null ? doctorTable.getScene().getWindow() : null);
+        if (file == null) return;
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            ensureChineseFonts();
+            Document document = new Document();
+            PdfWriter.getInstance(document, fos);
+            document.open();
+
+            document.add(new Paragraph("预约月度报告 - " + targetMonth, zhTitleFont));
+            document.add(new Paragraph("生成时间: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), zhBodyFont));
+            document.add(new Paragraph("当月预约总量: " + monthApps.size(), zhBodyFont));
+            document.add(new Paragraph(" ", zhBodyFont));
+
+            document.add(new Paragraph("按科室预约量", zhBodyFont));
+            PdfPTable deptTable = new PdfPTable(2);
+            deptTable.addCell(new Paragraph("科室", zhBodyFont));
+            deptTable.addCell(new Paragraph("预约量", zhBodyFont));
+            deptCount.forEach((k, v) -> {
+                deptTable.addCell(new Paragraph(k, zhBodyFont));
+                deptTable.addCell(new Paragraph(String.valueOf(v), zhBodyFont));
+            });
+            document.add(deptTable);
+            document.add(new Paragraph(" ", zhBodyFont));
+
+            document.add(new Paragraph("按医生工作量", zhBodyFont));
+            PdfPTable doctorTable = new PdfPTable(2);
+            doctorTable.addCell(new Paragraph("医生", zhBodyFont));
+            doctorTable.addCell(new Paragraph("预约量", zhBodyFont));
+            doctorCount.forEach((k, v) -> {
+                doctorTable.addCell(new Paragraph(k, zhBodyFont));
+                doctorTable.addCell(new Paragraph(String.valueOf(v), zhBodyFont));
+            });
+            document.add(doctorTable);
+
+            document.close();
+            showInfo("生成成功", "报表已生成:\n" + file.getAbsolutePath());
+        } catch (IOException | DocumentException ex) {
+            showError("生成失败", ex.getMessage());
+        }
+    }
+
+    private void ensureChineseFonts() throws IOException, DocumentException {
+        if (zhBaseFont != null) return;
+        zhBaseFont = BaseFont.createFont("STSong-Light", "UniGB-UCS2-H", BaseFont.EMBEDDED);
+        zhTitleFont = new Font(zhBaseFont, 16, Font.BOLD);
+        zhBodyFont = new Font(zhBaseFont, 12, Font.NORMAL);
+    }
+
+    private boolean isInMonth(String startTime, YearMonth targetMonth) {
+        LocalDateTime dt = parseDateTime(startTime);
+        if (dt == null) return false;
+        return YearMonth.from(dt).equals(targetMonth);
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return LocalDateTime.parse(value);
+        } catch (DateTimeParseException ex) {
+            try {
+                return LocalDateTime.parse(value.replace(" ", "T"));
+            } catch (DateTimeParseException ignored) {
+                return null;
+            }
+        }
+    }
+
+    private void showInfo(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
     }
 
     private Map<String, Object> parseDoctorLine(String line, int lineNo) throws IOException {
