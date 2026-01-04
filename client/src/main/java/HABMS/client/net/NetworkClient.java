@@ -24,14 +24,16 @@ public class NetworkClient {
     private static final int SERVER_PORT;
 
     /** 支持通过环境变量配置host:port */
-    static{
+    static {
         String v1 = System.getenv("SERVER_HOST");
-        SERVER_HOST=(v1 == null || v1.isBlank() ? "localhost" : v1);
+        SERVER_HOST = (v1 == null || v1.isBlank() ? "localhost" : v1);
         String v2 = System.getenv("SERVER_PORT");
-        SERVER_PORT=(v2 == null || v2.isBlank() ? 9000 : Integer.parseInt(v2));
+        SERVER_PORT = (v2 == null || v2.isBlank() ? 9000 : Integer.parseInt(v2));
+        System.out.println("server:" + v1 + ':' + v2);
     }
 
-    private NetworkClient() {}
+    private NetworkClient() {
+    }
 
     public static synchronized NetworkClient getInstance() {
         if (instance == null) {
@@ -54,14 +56,17 @@ public class NetworkClient {
     /** 序列化请求，发送后读取单行响应并反序列化。 */
     public Response sendRequest(Request request) throws IOException {
         // Ensure connection
-        // connect(); // In a real app, you might want to manage connection lifecycle better
+        // connect(); // In a real app, you might want to manage connection lifecycle
+        // better
 
-        // For now, let's assume we connect for each request or maintain a long connection.
-        // Given the requirement "login after each connection corresponds to an Account", 
+        // For now, let's assume we connect for each request or maintain a long
+        // connection.
+        // Given the requirement "login after each connection corresponds to an
+        // Account",
         // we should maintain the connection.
         if (socket == null || socket.isClosed()) {
-             // Try to connect, if fails, throw exception
-             connect();
+            // Try to connect, if fails, throw exception
+            connect();
         }
 
         String jsonReq = JsonUtil.toJson(request);
@@ -76,11 +81,12 @@ public class NetworkClient {
 
         return JsonUtil.fromJson(jsonResp, Response.class);
     }
-    
+
     /** 关闭底层 socket。 */
     public void close() {
         try {
-            if (socket != null) socket.close();
+            if (socket != null)
+                socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
