@@ -20,8 +20,16 @@ public class NetworkClient {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private static final String SERVER_HOST = "localhost";
-    private static final int SERVER_PORT = 9000; // Server defaults to 9000
+    private static final String SERVER_HOST;
+    private static final int SERVER_PORT;
+
+    /** 支持通过环境变量配置host:port */
+    static{
+        String v1 = System.getenv("SERVER_HOST");
+        SERVER_HOST=(v1 == null || v1.isBlank() ? "localhost" : v1);
+        String v2 = System.getenv("SERVER_PORT");
+        SERVER_PORT=(v2 == null || v2.isBlank() ? 9000 : Integer.parseInt(v2));
+    }
 
     private NetworkClient() {}
 
