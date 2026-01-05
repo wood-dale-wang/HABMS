@@ -107,6 +107,81 @@
 + 并发：服务端多线程，每连接一线程；预约使用 DB 锁+事务；排班更新需与预约一致性检查。
 + 安全：密码 SHA-256 传输
 
-## 7. 测试与验证
+## 7. 附加数据
 
 本项目附带了一些测试用文件，主要是测试`xls`导入的，在`datas`目录下。
+
+## 8. 测试与截图
+
+数据库初始化、配置好环境变量后
+
+### 1. 登录页面
+
+用户登录页面：![](./media/home_page.png)
+
+医生登录页面：![](./media/home_page2.png)
+
+注册页面：![](./media/sign_up_ok.png)
+
+注册年龄限制：![](./media/sign_up.png)
+
+年龄判断，小于10岁的不能注册
+
+### 2. 管理员页面与功能
+
+在登录页面选择部门"管理"，使用内置管理员账户登录（用户名：Admin，密码：admin）。
+
+管理员页面：![](./media/admin_page.png)
+
+#### 导入医生列表新建医生账户
+
+点击导入医生列表可以导入医生列表
+
+data/doctor.xlsx：![](./media/doctor_list_xlsx.png)
+
+由于配置中没有写“中医科”，所以报错：![](./media/doctor_import_err.png)
+
+修改后可以正常导入，点击“刷新医生列表”可以看到导入的医生：![](./media/doctor_import_ok.png)
+
+#### 导入排班表
+
+点击导入排班表可以导入排班表
+
+data/schedule.xlsx：![](./media/schedule_list_xlsx.png)
+
+导入后点击“刷新排班列表”可以看到导入的排班：![](./media/schedule_import.png)
+
+### 3. 用户页面与功能
+
+#### 预约相关操作
+
+登陆后，点击科室可以查看当前科室医生，点击医生可以查看医生的排班表。![](./media/person_book_page.png)
+
+点击排班后再点击“确认预约”可以预约此时间段
+
+在“我的预约页面”可以查看所有预约记录，也可以取消预约（先点击对应预约记录）![](./media/person_book_list_page.png)
+
+取消预约会返还排班的容量
+
+#### 账户相关操作
+
+在“个人中心”页面可以查看个人信息，并且可以修改![](./media/person_info_change.png)
+
+数据库可见修改前后![](./media/person_info_change_db.png)
+
+由于需要使用PID或者手机号登录，所以这两个是不能更改的。
+
+也可以注销账户![](./media/person_des.png)
+
+注销后数据库对应记录会删除![](./media/person_des_db.png)
+
+### 4.医生页面与功能
+
+登录后可以看到排班![](./media/doctor_home_page.png)
+
+可以看到当前待就诊列表![](./media/doctor_call_page)
+
+可以叫号（将下一个预约的statu从ok改变为done）![](./media/doctor_call.png)
+
+如图，叫号后数据库的状态（ok变为了done）![](./media/Appointment_call_change.png)
+
