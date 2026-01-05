@@ -312,10 +312,16 @@ public class PatientMainController {
     /** 更新个人资料并同步 Session。 */
     @FXML
     private void handleUpdateProfile(ActionEvent event) {
-        Map<String, String> data = new HashMap<>();
+        User user = Session.getCurrentUser();
+        if (user == null) return;
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("aid", user.getAid());
+        data.put("pid", user.getPid());
         data.put("name", profileNameField.getText());
         data.put("phone", profilePhoneField.getText());
         data.put("sex", profileSexCombo.getValue());
+        data.put("passwordHex", user.getPasswordHex());
         
         Task<Response> task = new Task<>() {
             @Override
@@ -354,7 +360,9 @@ public class PatientMainController {
             Task<Response> task = new Task<>() {
                 @Override
                 protected Response call() throws Exception {
-                    return NetworkClient.getInstance().sendRequest(new Request("account_delete", null));
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("aid", Session.getCurrentUser().getAid());
+                    return NetworkClient.getInstance().sendRequest(new Request("account_delete", data));
                 }
             };
             task.setOnSucceeded(e -> {

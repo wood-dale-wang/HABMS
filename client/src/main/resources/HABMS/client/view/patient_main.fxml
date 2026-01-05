@@ -181,7 +181,7 @@
                               <Label text="性别:" GridPane.rowIndex="3" />
                               <TextField fx:id="profileNameField" GridPane.columnIndex="1" />
                               <TextField fx:id="profilePidField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                              <TextField fx:id="profilePhoneField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              <TextField fx:id="profilePhoneField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                               <ComboBox fx:id="profileSexCombo" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                               <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="20.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
                                  <children>

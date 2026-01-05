@@ -26,34 +26,56 @@ import java.util.Map;
  */
 public class DoctorMainController {
 
-    @FXML private Label welcomeLabel;
-    @FXML private TabPane mainTabPane;
+    @FXML
+    private Label welcomeLabel;
+    @FXML
+    private TabPane mainTabPane;
 
     // Schedule Tab
-    @FXML private TableView<Schedule> scheduleTable;
-    @FXML private TableColumn<Schedule, Integer> colSchId;
-    @FXML private TableColumn<Schedule, String> colSchStart;
-    @FXML private TableColumn<Schedule, String> colSchEnd;
-    @FXML private TableColumn<Schedule, Integer> colSchCap;
-    @FXML private TableColumn<Schedule, Integer> colSchRes;
+    @FXML
+    private TableView<Schedule> scheduleTable;
+    @FXML
+    private TableColumn<Schedule, Integer> colSchId;
+    @FXML
+    private TableColumn<Schedule, String> colSchStart;
+    @FXML
+    private TableColumn<Schedule, String> colSchEnd;
+    @FXML
+    private TableColumn<Schedule, Integer> colSchCap;
+    @FXML
+    private TableColumn<Schedule, Integer> colSchRes;
 
     // Appointment Tab
-    @FXML private TableView<Appointment> appointmentTable;
-    @FXML private TableColumn<Appointment, String> colAppId;
-    @FXML private TableColumn<Appointment, String> colAppPid;
-    @FXML private TableColumn<Appointment, String> colAppTime;
-    @FXML private TableColumn<Appointment, String> colAppStatus;
-    @FXML private TextArea diagnosisArea;
-    @FXML private ComboBox<Schedule> workScheduleCombo;
+    @FXML
+    private TableView<Appointment> appointmentTable;
+    @FXML
+    private TableColumn<Appointment, String> colAppId;
+    @FXML
+    private TableColumn<Appointment, String> colAppPid;
+    @FXML
+    private TableColumn<Appointment, String> colAppTime;
+    @FXML
+    private TableColumn<Appointment, String> colAppStatus;
+    @FXML
+    private TextArea diagnosisArea;
+    @FXML
+    private ComboBox<Schedule> workScheduleCombo;
 
     // Removed management tab; admin功能迁移至独立页面
 
     // Profile Tab
-    @FXML private TextField profileDid;
-    @FXML private TextField profileName;
-    @FXML private TextField profileDept;
-    @FXML private TextArea profileDesc;
-    @FXML private CheckBox profileAdmin;
+    @FXML
+    private TextField profileDid;
+    @FXML
+    private TextField profileName;
+    @FXML
+    private TextField profileDept;
+    @FXML
+    private TextArea profileDesc;
+    @FXML
+    private CheckBox profileAdmin;
+
+    private int currentSerialNumber = 0;
 
     /** 初始化表格列、用户信息并加载初始数据。 */
     @FXML
@@ -79,7 +101,7 @@ public class DoctorMainController {
 
         colAppId.setCellValueFactory(new PropertyValueFactory<>("apid"));
         colAppPid.setCellValueFactory(new PropertyValueFactory<>("aid")); // Assuming AID is patient ID
-        colAppTime.setCellValueFactory(new PropertyValueFactory<>("startTime")); 
+        colAppTime.setCellValueFactory(new PropertyValueFactory<>("startTime"));
         // Status field is exposed as getStatus() on Appointment
         colAppStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
@@ -103,6 +125,10 @@ public class DoctorMainController {
             }
         });
         workScheduleCombo.setButtonCell(workScheduleCombo.getCellFactory().call(null));
+        workScheduleCombo.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            currentSerialNumber = 0;
+            diagnosisArea.clear();
+        });
 
         // Load initial data
         handleRefreshSchedules(null);
@@ -112,6 +138,7 @@ public class DoctorMainController {
     /** 退出医生登录并返回登录页。 */
     @FXML
     private void handleLogout(ActionEvent event) throws IOException {
+        NetworkClient.getInstance().sendRequest(new Request("doctor_logout", null));
         Session.clear();
         App.setRoot("view/login", "登录");
     }
@@ -120,12 +147,13 @@ public class DoctorMainController {
     @FXML
     private void handleRefreshSchedules(ActionEvent event) {
         Doctor doctor = Session.getCurrentDoctor();
-        if (doctor == null) return;
+        if (doctor == null)
+            return;
 
         Map<String, String> data = new HashMap<>();
         data.put("did", doctor.getDid());
         Request req = new Request("schedule_by_doctor", data);
-        
+
         Task<Response> task = new Task<>() {
             @Override
             protected Response call() throws Exception {
@@ -138,9 +166,8 @@ public class DoctorMainController {
             if (resp.isOk()) {
                 try {
                     List<Schedule> list = JsonUtil.getMapper().convertValue(
-                        resp.getData(), 
-                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Schedule.class)
-                    );
+                            resp.getData(),
+                            JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Schedule.class));
                     scheduleTable.setItems(FXCollections.observableArrayList(list));
                     workScheduleCombo.setItems(FXCollections.observableArrayList(list));
                     if (!list.isEmpty()) {
@@ -158,7 +185,7 @@ public class DoctorMainController {
     @FXML
     private void handleRefreshAppointments(ActionEvent event) {
         Request req = new Request("doctor_appointments", null);
-        
+
         Task<Response> task = new Task<>() {
             @Override
             protected Response call() throws Exception {
@@ -171,9 +198,9 @@ public class DoctorMainController {
             if (resp.isOk()) {
                 try {
                     List<Appointment> list = JsonUtil.getMapper().convertValue(
-                        resp.getData(), 
-                        JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class, Appointment.class)
-                    );
+                            resp.getData(),
+                            JsonUtil.getMapper().getTypeFactory().constructCollectionType(List.class,
+                                    Appointment.class));
                     List<Appointment> waiting = list.stream()
                             .filter(a -> "Ok".equalsIgnoreCase(a.getStatus()))
                             .toList();
@@ -197,12 +224,13 @@ public class DoctorMainController {
             return;
         }
 
-        // Only proceed when there are waiting (status=Ok) appointments for this schedule
+        // Only proceed when there are waiting (status=Ok) appointments for this
+        // schedule
         List<Appointment> waiting = appointmentTable.getItems().stream()
                 .filter(a -> a.getSid() == selectedSchedule.getSid())
                 .filter(a -> "Ok".equalsIgnoreCase(a.getStatus()))
                 .toList();
-        
+
         if (waiting.isEmpty()) {
             showAlert("提示", "当前排班无候诊患者");
             return;
@@ -210,21 +238,23 @@ public class DoctorMainController {
 
         Map<String, Object> data = new HashMap<>();
         data.put("sid", selectedSchedule.getSid());
-        
+        data.put("serialNumber", currentSerialNumber);
+
         Request req = new Request("doctor_call_next", data);
-        
+
         Task<Response> task = new Task<>() {
             @Override
             protected Response call() throws Exception {
                 return NetworkClient.getInstance().sendRequest(req);
             }
         };
-        
+
         task.setOnSucceeded(e -> {
             Response resp = task.getValue();
             if (resp.isOk()) {
                 try {
                     Appointment nextApp = JsonUtil.getMapper().convertValue(resp.getData(), Appointment.class);
+                    currentSerialNumber = Integer.parseInt(nextApp.getSerialNumber());
                     showAlert("叫号成功", "请 " + nextApp.getAid() + " 号患者 (" + nextApp.getApid() + ") 就诊");
                     diagnosisArea.setText("正在诊疗: " + nextApp.getAid() + "\n预约号: " + nextApp.getApid());
                     handleRefreshAppointments(null); // Refresh list to show status change
@@ -235,7 +265,7 @@ public class DoctorMainController {
                 showAlert("提示", "当前排班无更多候诊患者 (" + resp.getErrInfo() + ")");
             }
         });
-        
+
         new Thread(task).start();
     }
 
@@ -245,7 +275,6 @@ public class DoctorMainController {
         diagnosisArea.clear();
         showAlert("提示", "诊疗已完成，请呼叫下一位");
     }
-
 
     private void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

@@ -293,6 +293,8 @@ public class LoginController {
                         // Doctor/Admin Login
                         Doctor doctor = JsonUtil.getMapper().convertValue(resp.getData(), Doctor.class);
                         System.out.println("Doctor login success: " + doctor.getName());
+                        // Store passwordHex in session object if needed later
+                        // doctor.setPasswordHex(passwordHex); // Doctor model might not have setPasswordHex or field
                         Session.setCurrentDoctor(doctor);
                             if (doctor.isAdmin()) {
                                 App.setRoot("view/admin_main", "飞马医院 - 管理端");
@@ -303,6 +305,7 @@ public class LoginController {
                         // Patient Login
                         User user = JsonUtil.getMapper().convertValue(resp.getData(), User.class);
                         System.out.println("Login success: " + user.getName());
+                        user.setPasswordHex(passwordHex); // Store password for profile updates
                         Session.setCurrentUser(user);
                         App.setRoot("view/patient_main", "飞马医院 - 患者端");
                     }

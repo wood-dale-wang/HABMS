@@ -295,6 +295,8 @@ public class AdminMainController {
     /** 删除选中的医生账号。 */
     @FXML
     private void handleDeleteDoctor(ActionEvent event) {
+        showError("功能未开放", "API 不支持删除医生");
+        /*
         Doctor selected = doctorTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showError("未选择医生", "请先在列表中选择要删除的医生");
@@ -333,11 +335,14 @@ public class AdminMainController {
                 new Thread(task).start();
             }
         });
+        */
     }
 
     /** 删除选中的排班。 */
     @FXML
     private void handleDeleteSchedule(ActionEvent event) {
+        showError("功能未开放", "API 不支持删除排班");
+        /*
         HABMS.client.model.Schedule selected = scheduleTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showError("未选择排班", "请先在列表中选择要删除的排班");
@@ -376,6 +381,7 @@ public class AdminMainController {
                 new Thread(task).start();
             }
         });
+        */
     }
 
     /** 通过弹窗编辑排班信息并提交更新。 */
@@ -401,12 +407,15 @@ public class AdminMainController {
 
         TextField did = new TextField(selected.getDid());
         did.setPromptText("医生ID");
+        did.setEditable(false);
         
         TextField startTime = new TextField(selected.getStartTime());
         startTime.setPromptText("2026-01-01T09:00:00");
+        startTime.setEditable(false);
         
         TextField endTime = new TextField(selected.getEndTime());
         endTime.setPromptText("2026-01-01T12:00:00");
+        endTime.setEditable(false);
         
         TextField capacity = new TextField(String.valueOf(selected.getCapacity()));
         capacity.setPromptText("20");
@@ -426,9 +435,7 @@ public class AdminMainController {
             if (dialogButton == okButtonType) {
                 Map<String, Object> schedule = new HashMap<>();
                 schedule.put("sid", selected.getSid());
-                schedule.put("did", did.getText().trim());
-                schedule.put("startTime", startTime.getText().trim());
-                schedule.put("endTime", endTime.getText().trim());
+                // Only capacity is mutable via this API
                 try {
                     schedule.put("capacity", Integer.parseInt(capacity.getText().trim()));
                 } catch (NumberFormatException e) {
@@ -778,6 +785,7 @@ public class AdminMainController {
 
     @FXML
     private void handleLogout(ActionEvent event) throws IOException {
+        NetworkClient.getInstance().sendRequest(new Request("doctor_logout", null));
         App.setRoot("view/login", "飞马星球医院预约挂号系统");
     }
 

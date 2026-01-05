@@ -26,10 +26,10 @@ public class NetworkClient {
     /** 支持通过环境变量配置host:port */
     static {
         String v1 = System.getenv("SERVER_HOST");
-        SERVER_HOST = (v1 == null || v1.isBlank() ? "localhost" : v1);
+        SERVER_HOST = (v1 == null || v1.isBlank()) ? "localhost" : v1;
         String v2 = System.getenv("SERVER_PORT");
-        SERVER_PORT = (v2 == null || v2.isBlank() ? 9000 : Integer.parseInt(v2));
-        System.out.println("server:" + v1 + ':' + v2);
+        SERVER_PORT = (v2 == null || v2.isBlank()) ? 9000 : Integer.parseInt(v2);
+        System.out.println("server:" + SERVER_HOST + ':' + SERVER_PORT);
     }
 
     private NetworkClient() {
