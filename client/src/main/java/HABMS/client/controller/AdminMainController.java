@@ -1113,8 +1113,13 @@ public class AdminMainController {
             document.add(new Paragraph("当月预约总量: " + monthApps.size(), zhBodyFont));
             document.add(new Paragraph(" ", zhBodyFont));
 
-            document.add(new Paragraph("按科室预约量", zhBodyFont));
+            Paragraph deptTitle = new Paragraph("按科室预约量", zhBodyFont);
+            deptTitle.setSpacingAfter(6f);
+            document.add(deptTitle);
+
             PdfPTable deptTable = new PdfPTable(2);
+            deptTable.setSpacingBefore(4f);
+            deptTable.setSpacingAfter(12f);
             deptTable.addCell(new Paragraph("科室", zhBodyFont));
             deptTable.addCell(new Paragraph("预约量", zhBodyFont));
             deptCount.forEach((k, v) -> {
@@ -1124,8 +1129,12 @@ public class AdminMainController {
             document.add(deptTable);
             document.add(new Paragraph(" ", zhBodyFont));
 
-            document.add(new Paragraph("按医生工作量", zhBodyFont));
+            Paragraph doctorTitle = new Paragraph("按医生工作量", zhBodyFont);
+            doctorTitle.setSpacingAfter(6f);
+            document.add(doctorTitle);
+
             PdfPTable doctorTable = new PdfPTable(2);
+            doctorTable.setSpacingBefore(4f);
             doctorTable.addCell(new Paragraph("医生", zhBodyFont));
             doctorTable.addCell(new Paragraph("预约量", zhBodyFont));
             doctorCount.forEach((k, v) -> {

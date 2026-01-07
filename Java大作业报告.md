@@ -151,6 +151,18 @@ data/schedule.xlsx：![](./media/schedule_list_xlsx.png)
 
 导入后点击“刷新排班列表”可以看到导入的排班：![](./media/schedule_import.png)
 
+#### 导出
+
+点击“刷新预约数据”从后端索引预约数据。![](./media/export.png)
+
+可以导出预约记录（xls格式）：![](./media/xls.png)
+
+可以导出月度统计报表（pdf格式）：
+
+选择月份:![](./media/export_pdf.png)
+
+报表样式：![](./media/pdf.png)
+
 ### 3. 用户页面与功能
 
 #### 预约相关操作
@@ -184,4 +196,3 @@ data/schedule.xlsx：![](./media/schedule_list_xlsx.png)
 可以叫号（将下一个预约的statu从ok改变为done）![](./media/doctor_call.png)
 
 如图，叫号后数据库的状态（ok变为了done）![](./media/Appointment_call_change.png)
-
