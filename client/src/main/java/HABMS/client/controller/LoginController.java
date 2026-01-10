@@ -354,8 +354,8 @@ public class LoginController {
             setRegisterStatus(false, "请输入有效的数字年龄");
             return;
         }
-        if (age <= 10) {
-            setRegisterStatus(false, "年龄需大于10岁");
+        if (age < 10) {
+            setRegisterStatus(false, "年龄需不小于10岁");
             return;
         }
 

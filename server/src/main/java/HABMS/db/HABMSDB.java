@@ -419,6 +419,8 @@ public class HABMSDB {
     public Appointment TryAppointment(String aid, int sid) throws SQLException {
         String updateSql = "UPDATE Schedule SET Res=Res-1 WHERE SID=? AND Res>0";
         String selectSchedule = "SELECT DID, STime, ETime FROM Schedule WHERE SID=?";
+        String overlapSql = "SELECT 1 FROM Appointment a JOIN Schedule s ON a.SID=s.SID "
+                + "WHERE a.AID=? AND a.Statu='Ok' AND NOT (s.ETime<=? OR s.STime>=?) LIMIT 1";
         String insertAppointment = "INSERT INTO Appointment(APID,AID,DID,SID,Statu) VALUES (?,?,?,?,?)";
 
         try (Connection conn = getConnection()) {
@@ -452,6 +454,20 @@ public class HABMSDB {
                 }
             }
 
+            // Prevent duplicate reservation for the same patient in the same time slot
+            try (PreparedStatement ps = conn.prepareStatement(overlapSql)) {
+                ps.setString(1, aid);
+                ps.setTimestamp(2, Timestamp.valueOf(sTime));
+                ps.setTimestamp(3, Timestamp.valueOf(eTime));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        conn.rollback();
+                        conn.setAutoCommit(oldAutoCommit);
+                        throw new SQLException("duplicate appointment in time slot");
+                    }
+                }
+            }
+
             Appointment appointment = Appointment.create(aid, did, sid, AppointmentStatus.Ok, sTime, eTime);
             try (PreparedStatement ps = conn.prepareStatement(insertAppointment)) {
                 ps.setString(1, appointment.getApid());
@@ -465,6 +481,19 @@ public class HABMSDB {
             conn.commit();
             conn.setAutoCommit(oldAutoCommit);
             return appointment;
+        }
+    }
+
+    public boolean hasOverlappingOkAppointment(String aid, LocalDateTime start, LocalDateTime end) throws SQLException {
+        String sql = "SELECT 1 FROM Appointment a JOIN Schedule s ON a.SID=s.SID "
+                + "WHERE a.AID=? AND a.Statu='Ok' AND NOT (s.ETime<=? OR s.STime>=?) LIMIT 1";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, aid);
+            ps.setTimestamp(2, Timestamp.valueOf(start));
+            ps.setTimestamp(3, Timestamp.valueOf(end));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 

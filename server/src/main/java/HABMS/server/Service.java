@@ -296,7 +296,16 @@ final class Service implements Runnable {
             return err("did and sid not match");
         }
 
-        Appointment appointment = db.TryAppointment(sessionAccount.getAid(), sid);
+        Appointment appointment;
+        try {
+            appointment = db.TryAppointment(sessionAccount.getAid(), sid);
+        } catch (java.sql.SQLException ex) {
+            if (ex.getMessage() != null && ex.getMessage().contains("duplicate appointment in time slot")) {
+                return err("already has appointment in this time slot");
+            }
+            throw ex;
+        }
+
         if (appointment == null) {
             return err("capacity is zero");
         }
